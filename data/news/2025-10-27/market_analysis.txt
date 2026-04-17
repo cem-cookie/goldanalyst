@@ -1,0 +1,45 @@
+```plaintext
+============================================================
+MARKET ANALYSIS SUMMARY
+============================================================
+
+Sources Analyzed: 7 articles
+Average Quality Score: 69.29/100
+Quality Distribution:
+  - High Quality (≥75): 0
+  - Medium Quality (50-74): 7
+  - Low Quality (<50): 0
+
+============================================================
+
+### Summary of Gold Market Insights
+
+#### Overall Market Sentiment
+The overall sentiment in the gold market is bearish with a confidence level of 7. Gold prices have seen a significant decline, dropping 9% from their peak, and currently hovering around $4,000 per ounce (per Fortune). Analysts at Capital Economics predict further declines, expecting prices to fall to $3,500 by the end of 2026 (per Business Insider). The recent sell-off is attributed to profit-taking and a stronger U.S. dollar, which has diminished safe-haven demand (per Barchart). Technical levels indicate that gold reached an all-time high of $4,398 per ounce in October 2025 (per Barchart), but the current correction suggests a potential stabilization around the 50-day simple moving average (SMA).
+
+Volume and open interest data were not explicitly mentioned in the sources. However, the correlation with other assets shows that a stronger U.S. dollar and progress in U.S.-China trade talks have reduced gold's attractiveness as a safe-haven asset (per Benzinga and Bloomberg). The U.S. equity markets have been rallying, with the S&P 500 and Nasdaq 100 reaching record highs, further diverting investment from gold (per Benzinga).
+
+#### Key Price Drivers and Catalysts
+1. **Central Bank Purchases**: Central banks, particularly in emerging markets like India and China, have been accumulating gold reserves, providing a solid price floor (per Barchart). However, the share of gold in total reserves is not expected to rise significantly, limiting upside potential (per Business Insider).
+
+2. **U.S.-China Trade Progress**: Recent breakthroughs in trade negotiations between the U.S. and China have reduced geopolitical risks, leading to a stronger dollar and decreased demand for gold as a safe haven (per Benzinga and Bloomberg). This progress has been a key factor in the recent price decline.
+
+3. **Post-Diwali Demand Drop**: The end of the Indian festive season has led to a sharp drop in physical gold demand, applying downward pressure on prices (per Barchart).
+
+4. **Profit-Taking and Market Positioning**: After a strong rally, investors are taking profits, contributing to the recent price correction. The ease of trading gold ETFs has facilitated quick exposure and subsequent profit-taking (per Investing.com).
+
+#### Major Risks and Concerns
+- **Geopolitical Risks**: While U.S.-China trade tensions have eased, other global uncertainties, such as the conflict in Ukraine, continue to pose risks that could intermittently drive demand for gold (per Barchart).
+- **Inflation and Fed Policy**: If the Federal Reserve's rate cuts are not aggressive enough or if economic data improves, rising real yields could lessen gold's appeal (per Barchart). Persistent inflation could, however, renew interest in gold as an inflation hedge.
+
+#### Source Consensus vs. Disagreement
+- **Consensus**: There is a general agreement among sources that the recent rally was driven by FOMO and that prices are likely to decline further (5 sources confirm). Central bank purchases provide a price floor, but are not expected to drive prices higher (3 sources confirm).
+- **Disagreements**: Some analysts, like Ed Yardeni, maintain a bullish long-term outlook, predicting prices could reach $5,000 by 2026, contrasting with the bearish short-term view (per Fortune).
+- **Unique Insights**: The New York Post highlights a Reuters poll predicting an average price of $4,275 in 2026, indicating a more optimistic long-term view compared to other sources.
+- **Confidence Rating**: 8
+
+============================================================
+Note: This analysis was generated with quality-weighted filtering.
+Low quality sources (score < 50) were excluded.
+============================================================
+```

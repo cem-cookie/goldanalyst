@@ -1,0 +1,74 @@
+# News Source Quality Scoring Configuration
+# This file defines quality scores for different news sources
+# Score range: 0-100 (higher is better)
+
+sources:
+  # Tier 1: High credibility financial news sources
+  YahooRSS:
+    base_score: 75
+    description: "Yahoo Finance RSS - Major financial news aggregator"
+    weight_factors:
+      - has_full_text: 10  # Bonus if full text is available
+      - article_length_min: 500  # Minimum chars for quality
+      - article_length_bonus: 5  # Bonus for articles > 1000 chars
+
+  InvestingRSS:
+    base_score: 80
+    description: "Investing.com RSS - Professional financial news platform"
+    weight_factors:
+      - has_full_text: 10
+      - article_length_min: 500
+      - article_length_bonus: 5
+
+  # Tier 2: Specialized commodity/metals news
+  MetalsDaily:
+    base_score: 70
+    description: "MetalsDaily - Specialized precious metals news"
+    weight_factors:
+      - has_full_text: 10
+      - article_length_min: 400
+      - article_length_bonus: 5
+
+  # Tier 3: Less verified sources (can add more as needed)
+  Unknown:
+    base_score: 40
+    description: "Unverified or unknown news source"
+    weight_factors:
+      - has_full_text: 5
+      - article_length_min: 300
+      - article_length_bonus: 3
+
+# Quality thresholds for filtering
+thresholds:
+  minimum_score: 50  # Articles below this score are marked as low_quality
+  high_quality: 75   # Articles above this are marked as high_quality
+
+# LLM selection bonus/penalty
+llm_selection:
+  selected_bonus: 15  # Bonus points if LLM selects this article
+  not_selected_penalty: -10  # Penalty if LLM doesn't select it
+
+# Content quality indicators
+content_quality:
+  keywords_positive:  # Keywords that indicate quality content
+    - "Federal Reserve"
+    - "inflation"
+    - "central bank"
+    - "interest rate"
+    - "XAU/USD"
+    - "gold futures"
+    - "mining production"
+    - "USD strength"
+  keywords_negative:  # Keywords that might indicate clickbait/low quality
+    - "you won't believe"
+    - "shocking"
+    - "this one trick"
+    - "must see"
+
+  positive_keyword_bonus: 3  # Bonus per positive keyword found
+  negative_keyword_penalty: -5  # Penalty per negative keyword found
+
+# Historical performance tracking
+performance:
+  track_accuracy: true  # Whether to track if selected news led to correct predictions
+  feedback_weight: 0.2  # How much historical performance affects future scoring

@@ -1,0 +1,80 @@
+{
+  "asset": "XAU/USD",
+  "evaluated_at": "2023-10-01T00:00:00Z",
+  "items": [
+    {
+      "id": 1,
+      "approval": "rejected",
+      "approval_score": 25,
+      "risk_level": "Low",
+      "key_risks": [
+        "Long-term volatility",
+        "Opportunity cost",
+        "Holding costs"
+      ],
+      "mitigations": [
+        "Regularly review geopolitical developments",
+        "Diversify portfolio to mitigate opportunity costs",
+        "Implement a tighter stop-loss strategy"
+      ],
+      "notes": "The Conservative Gold Holding strategy is rejected due to its low expected return, which does not align with the aggressive investor profile seeking high returns."
+    },
+    {
+      "id": 2,
+      "approval": "conditional",
+      "approval_score": 55,
+      "risk_level": "Medium",
+      "key_risks": [
+        "Interest rate changes",
+        "Long-term volatility",
+        "Holding costs",
+        "Opportunity cost"
+      ],
+      "mitigations": [
+        "Monitor interest rate trends closely",
+        "Set a clear exit strategy based on market conditions",
+        "Consider using options to hedge against downside risks"
+      ],
+      "notes": "The Balanced Gold Investment strategy is conditionally approved as it aligns with the aggressive profile, but the medium expected risk requires careful monitoring."
+    },
+    {
+      "id": 3,
+      "approval": "conditional",
+      "approval_score": 45,
+      "risk_level": "High",
+      "key_risks": [
+        "Long-term volatility",
+        "Interest rate fluctuations",
+        "High holding costs",
+        "Market sentiment shifts"
+      ],
+      "mitigations": [
+        "Use stop-loss orders to limit potential losses",
+        "Diversify investments to spread risk",
+        "Stay informed on market trends and adjust positions accordingly"
+      ],
+      "notes": "The Aggressive Gold Speculation strategy is conditionally approved due to its high expected return, but the high risk level necessitates strict risk management practices."
+    }
+  ],
+  "summary": {
+    "portfolio_risk": "Moderate",
+    "comment": "The overall portfolio risk is moderate, with a mix of strategies that include both conservative and aggressive approaches. Continuous monitoring and risk management are essential to align with the aggressive investment profile."
+  },
+  "user_context": {
+    "strategy_type": "Seasonal",
+    "investment_level": "Aggressive",
+    "buy_price_threshold": 4800.0,
+    "sell_price_threshold": 6000.0,
+    "target_profit": 0.1
+  },
+  "source_decision": {
+    "asset": "XAU/USD",
+    "timestamp": "2026-04-17T22:37:51.895687",
+    "market_summary": {
+      "sentiment": "Bullish sentiment towards gold as it continues to rise amid geopolitical tensions and economic uncertainty.",
+      "trend": "Gold is on an upward trend, having gained for four consecutive weeks, reaching near record highs.",
+      "volatility": "high",
+      "comment": "This strategy allows for participation in the ongoing upward trend of gold while managing risk effectively, making it suitable given the current market conditions."
+    }
+  }
+}

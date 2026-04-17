@@ -1,0 +1,34 @@
+# Core dependencies
+openai>=1.0.0
+anthropic>=0.18.0
+python-dotenv>=1.0.0
+
+# Web framework
+streamlit>=1.28.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Financial data
+yfinance>=0.2.0
+
+# Web scraping and news
+beautifulsoup4>=4.12.0
+newspaper3k>=0.2.8
+feedparser>=6.0.10
+requests>=2.31.0
+
+# Visualization
+altair>=5.0.0
+matplotlib>=3.7.0
+
+# Configuration
+pyyaml>=6.0
+
+# Testing (optional)
+pytest>=7.4.0
+

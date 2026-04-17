@@ -1,0 +1,50 @@
+/* 隐藏默认菜单/页眉（可删） */
+#MainMenu, header, footer { display: none !important; }
+
+/* 背景：柔和暖白渐变（中性而温暖） */
+
+/*html, body, .stApp {
+  background:
+    radial-gradient(1000px 800px at 20% 15%, rgba(245, 237, 223, 0.5) 0%, transparent 60%),
+    radial-gradient(900px 700px at 80% 0%, rgba(235, 225, 210, 0.4) 0%, transparent 55%),
+    linear-gradient(180deg, #faf8f3 0%, #f3f1eb 100%);
+  background-attachment: fixed, fixed, fixed;
+} */
+
+
+
+/* 让两列自动等高 */
+[data-testid="stHorizontalBlock"] {
+  align-items: stretch !important;
+}
+
+/* 页面整体自适应左右留白 */
+[data-testid="stAppViewContainer"],
+[data-testid="stMainBlockContainer"],
+.block-container {
+  padding-left: clamp(1rem, 3vw, 3rem) !important;
+  padding-right: clamp(1rem, 3vw, 3rem) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+[data-testid="stAppViewContainer"] {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+[data-testid="stAppViewBlockContainer"] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+[data-testid="stVerticalBlock"] {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+

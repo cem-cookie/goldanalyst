@@ -1,0 +1,16 @@
+{
+  "trading_days": 120,
+  "num_trades": 37,
+  "num_sells_closed": 17,
+  "win_rate": 64.71,
+  "gross_profit": 2895.53,
+  "gross_loss": -1485.05,
+  "net_realized": 1410.48,
+  "final_equity": 101866.25,
+  "final_cash": 60306.9,
+  "final_position": 8.57,
+  "unrealized_pnl": 529.77,
+  "total_pnl": 1940.25,
+  "max_drawdown": -4.71,
+  "sharpe_like": 0.615
+}
