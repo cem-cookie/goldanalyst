@@ -12,34 +12,18 @@ class TradingAgent:
     """Trading Agent: Manages account state and trading decisions"""
 
     def __init__(self, name="Agent", api_key=None, initial_cash=100_000.0, max_alloc=0.5,
-                 fee_bps=10, use_deepseek=False, json_path="data/gold_news.json",
-                 persist_outputs=True, context=None):
+                 fee_bps=10, json_path="data/gold_news.json",
+                 persist_outputs=True, context=None, model_name="gpt-4o-mini"):
+        self.model = model_name
         self.name = name
         self.api_key = api_key
         self.max_alloc = max_alloc
         self.fee_bps = fee_bps
-        self.use_deepseek = use_deepseek
-        self.json_path = json_path
-        self.persist_outputs = persist_outputs
-        self.context = context  # start with empty context, can be updated with dashboard parameters or other info
+        self.use_deepseek = False  # DeepSeek removed
+        # Initialize LLM client – only OpenAI (ChatGPT) for now
+        self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
+        self.model = model_name
 
-        # Account state
-        self.state = type('obj', (object,), {
-            'cash': initial_cash,
-            'position_oz': 0.0,
-            'initial_cash': initial_cash,
-        })()
-
-        # Initialize LLM client
-        if use_deepseek:
-            self.client = OpenAI(
-                api_key=api_key or os.getenv("DEEPSEEK_API_KEY"),
-                base_url="https://api.deepseek.com"
-            )
-            self.model = "deepseek-chat"
-        else:
-            self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
-            self.model = "gpt-4o-mini"
 
     def generate_trade_decision(self, user_prompt: str) -> dict:
         """Generate a single trading decision (BUY/SELL/HOLD) with fixed JSON structure."""

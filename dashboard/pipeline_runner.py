@@ -1,4 +1,5 @@
-import os
+import streamlit as st
+from cryptography.fernet import Fernet
 import json
 import traceback
 from datetime import datetime
@@ -135,7 +136,51 @@ class PipelineRunner:
                 "message": f"Error collecting news: {e}"
             }
     
-    def step_3_generate_decision(self, context: Dict = None) -> Dict:
+        def step_3_generate_decision(self, context: Dict = None, model_name: str = "gpt-4o-mini", api_key_enc: str | None = None) -> Dict:
+        """Step 3: Generate trading decision"""
+        if context is None:
+            context = {
+                "strategy": "Swing",
+                "investment_level": "Active",
+                "buy_price_threshold": 3950.0,
+                "sell_price_threshold": 4100.0,
+                "target_profit": 0.1
+            }
+        
+        try:
+            from agents.trading_agent import TradingAgent
+            
+            # Decrypt user‑provided API key if present
+            api_key = None
+            if api_key_enc and st.session_state.get('fernet_key'):
+                f = Fernet(st.session_state['fernet_key'].encode())
+                api_key = f.decrypt(api_key_enc.encode()).decode()
+            
+            agent = TradingAgent(
+                name="AutoTrader",
+                api_key=api_key,
+                json_path="data/gold_news.json",
+                context=context,
+                model_name=model_name
+            )
+            
+            decision = agent.run()
+            
+            self.api_usage += 5
+            self.scheduler.record_api_usage(5)
+            
+            if decision:
+                return {
+                    "success": True,
+                    "message": f"Decision generated: {decision.get('recommendation', {}).get('action', 'UNKNOWN')}",
+                    "decision": decision
+                }
+            else:
+                return {"success": False, "message": "No decision generated"}
+        
+        except Exception as e:
+            self.scheduler.add_error(str(e), "trading_decision")
+            return {"success": False, "message": f"Error generating decision: {e}"}
         """Step 3: Generate trading decision"""
         if context is None:
             context = {
@@ -336,7 +381,7 @@ class PipelineRunner:
         
         # Step 3: Trading Decision
         print("\n[3/4] Generating trading decision...")
-        step3 = self.step_3_generate_decision(context)
+        step3 = self.step_3_generate_decision(context, model_name=st.session_state.get('selected_model','ChatGPT (OpenAI)'), api_key_enc=st.session_state.get('api_key_enc')
         results["steps"]["decision"] = step3
         if not step3["success"]:
             print(f"  ⚠️ {step3['message']}")

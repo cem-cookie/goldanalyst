@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 import streamlit as st
+from cryptography.fernet import Fernet
 from pathlib import Path
 from datetime import datetime as dt_datetime
 
@@ -303,7 +304,42 @@ with right:
 
     # === RIGHT: Bottom — Control Panel ===
     with st.container(border=True):
-        st.markdown("#### Control Panel")
+        # --- AI Model & API Key Settings ---
+        with st.expander("🤖 AI Model & API Key Settings", expanded=False):
+            # Model selector (default ChatGPT)
+            model = st.radio(
+                "Select LLM",
+                ["ChatGPT (OpenAI)", "Claude (Anthropic)"],
+                index=0,
+                key="llm_selector"
+            )
+            st.session_state['selected_model'] = model
+
+            # API key entry – password masked
+            api_key_raw = st.text_input(
+                f"{model.split(' ')[0]} API key",
+                type="password",
+                placeholder="Enter your API key …",
+                key="api_key_input"
+            )
+
+            if api_key_raw:
+                # Generate per‑session Fernet key if not present
+                if 'fernet_key' not in st.session_state:
+                    st.session_state['fernet_key'] = Fernet.generate_key().decode()
+                f = Fernet(st.session_state['fernet_key'].encode())
+                st.session_state['api_key_enc'] = f.encrypt(api_key_raw.encode()).decode()
+
+            # Provider link for convenience
+            provider_link = {
+                "ChatGPT (OpenAI)": "https://platform.openai.com/account/api-keys",
+                "Claude (Anthropic)": "https://console.anthropic.com/account/keys"
+            }
+            st.markdown(
+                f"You can get your API key from → [{provider_link[model]}]({provider_link[model]})",
+                unsafe_allow_html=False
+            )
+
         
         # === Automation Settings ===
         with st.expander("📡 Automation Settings", expanded=True):
