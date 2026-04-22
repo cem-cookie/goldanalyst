@@ -136,7 +136,7 @@ class PipelineRunner:
                 "message": f"Error collecting news: {e}"
             }
     
-        def step_3_generate_decision(self, context: Dict = None, model_name: str = "gpt-4o-mini", api_key_enc: str | None = None) -> Dict:
+    def step_3_generate_decision(self, context: Dict = None, model_name: str = "gpt-4o-mini", api_key_enc: str | None = None) -> Dict:
         """Step 3: Generate trading decision"""
         if context is None:
             context = {
@@ -181,85 +181,7 @@ class PipelineRunner:
         except Exception as e:
             self.scheduler.add_error(str(e), "trading_decision")
             return {"success": False, "message": f"Error generating decision: {e}"}
-        """Step 3: Generate trading decision"""
-        if context is None:
-            context = {
-                "strategy": "Swing",
-                "investment_level": "Active",
-                "buy_price_threshold": 3950.0,
-                "sell_price_threshold": 4100.0,
-                "target_profit": 0.1
-            }
-        
-        try:
-            from agents.trading_agent import TradingAgent
-            
-            # Get API keys for fallback
-            openai_key = os.getenv("OPENAI_API_KEY")
-            deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-            
-            agent = TradingAgent(
-                name="AutoTrader",
-                api_key=openai_key,
-                use_deepseek=False,  # Will manually handle fallback
-                json_path="data/gold_news.json",
-                context=context
-            )
-            
-            # Try primary (OpenAI), then fallback
-            try:
-                decision = agent.run()
-            except Exception as primary_error:
-                # Try DeepSeek
-                try:
-                    agent.client = None  # Reset
-                    from openai import OpenAI
-                    agent.client = OpenAI(api_key=deepseek_key, base_url="https://api.deepseek.com")
-                    agent.model = "deepseek-chat"
-                    decision = agent.run()
-                except Exception as deepseek_error:
-                    # Try Ollama
-                    try:
-                        # Use Ollama directly
-                        import requests
-                        response = requests.post(
-                            "http://localhost:11434/api/generate",
-                            json={
-                                "model": "llama3.2",
-                                "prompt": "You are a gold trading expert. Provide a trading decision.",
-                                "stream": False
-                            },
-                            timeout=60
-                        )
-                        if response.status_code == 200:
-                            decision = {"action": "HOLD", "reasoning": "Ollama fallback - manual analysis required"}
-                        else:
-                            raise Exception("Ollama unavailable")
-                    except Exception as ollama_error:
-                        raise Exception(f"All LLM failed: {primary_error}, {deepseek_error}, {ollama_error}")
-            
-            # Record API usage (~5 for decision generation)
-            self.api_usage += 5
-            self.scheduler.record_api_usage(5)
-            
-            if decision:
-                return {
-                    "success": True,
-                    "message": f"Decision generated: {decision.get('recommendation', {}).get('action', 'UNKNOWN')}",
-                    "decision": decision
-                }
-            else:
-                return {
-                    "success": False,
-                    "message": "No decision generated"
-                }
-                
-        except Exception as e:
-            self.scheduler.add_error(str(e), "trading_decision")
-            return {
-                "success": False,
-                "message": f"Error generating decision: {e}"
-            }
+
     
     def step_4_risk_analysis(self, context: Dict = None) -> Dict:
         """Step 4: Run risk analysis"""
@@ -381,7 +303,7 @@ class PipelineRunner:
         
         # Step 3: Trading Decision
         print("\n[3/4] Generating trading decision...")
-        step3 = self.step_3_generate_decision(context, model_name=st.session_state.get('selected_model','ChatGPT (OpenAI)'), api_key_enc=st.session_state.get('api_key_enc')
+        step3 = self.step_3_generate_decision(context, model_name=st.session_state.get('selected_model','ChatGPT (OpenAI)'), api_key_enc=st.session_state.get('api_key_enc'))
         results["steps"]["decision"] = step3
         if not step3["success"]:
             print(f"  ⚠️ {step3['message']}")

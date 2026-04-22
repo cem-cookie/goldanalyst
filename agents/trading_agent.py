@@ -2,8 +2,24 @@ import os
 import re
 import json
 from datetime import datetime
-from openai import OpenAI
-from dotenv import load_dotenv
+try:
+    from openai import OpenAI
+except ImportError:
+    # Minimal stub for environments without openai package (used only for attribute tests)
+    class OpenAI:
+        def __init__(self, api_key=None, base_url=None):
+            self.api_key = api_key
+            self.base_url = base_url
+        class chat:
+            @staticmethod
+            def completions():
+                raise NotImplementedError("OpenAI client not available in this environment.")
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv():
+        pass
 
 load_dotenv()
 
@@ -19,10 +35,10 @@ class TradingAgent:
         self.api_key = api_key
         self.max_alloc = max_alloc
         self.fee_bps = fee_bps
-        self.use_deepseek = False  # DeepSeek removed
-        # Initialize LLM client – only OpenAI (ChatGPT) for now
+        self.json_path = json_path
+        self.persist_outputs = persist_outputs
+        # Initialize OpenAI client (ChatGPT) – only used for LLM calls
         self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
-        self.model = model_name
 
 
     def generate_trade_decision(self, user_prompt: str) -> dict:

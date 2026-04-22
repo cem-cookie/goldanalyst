@@ -304,43 +304,49 @@ with right:
 
     # === RIGHT: Bottom — Control Panel ===
     with st.container(border=True):
-        # --- AI Model & API Key Settings ---
-        with st.expander("🤖 AI Model & API Key Settings", expanded=False):
-            # Model selector (default ChatGPT)
-            model = st.radio(
-                "Select LLM",
-                ["ChatGPT (OpenAI)", "Claude (Anthropic)"],
-                index=0,
-                key="llm_selector"
-            )
-            st.session_state['selected_model'] = model
+        # Top spacer — padding between Control Panel border and AI Settings
+        top_spacer = st.container()
+        top_spacer.markdown("<div style='padding-top: 18px;'></div>", unsafe_allow_html=True)
 
-            # API key entry – password masked
-            api_key_raw = st.text_input(
-                f"{model.split(' ')[0]} API key",
-                type="password",
-                placeholder="Enter your API key …",
-                key="api_key_input"
-            )
+        # AI Settings section
+        ai_section = st.container()
+        with ai_section:
+            # --- AI Model & API Key Settings ---
+            with st.expander("🤖 AI Model & API Key Settings", expanded=False):
+                # Model selector (default ChatGPT)
+                model = st.radio(
+                    "Select LLM",
+                    ["ChatGPT (OpenAI)", "Claude (Anthropic)"],
+                    index=0,
+                    key="llm_selector"
+                )
+                st.session_state['selected_model'] = model
 
-            if api_key_raw:
-                # Generate per‑session Fernet key if not present
-                if 'fernet_key' not in st.session_state:
-                    st.session_state['fernet_key'] = Fernet.generate_key().decode()
-                f = Fernet(st.session_state['fernet_key'].encode())
-                st.session_state['api_key_enc'] = f.encrypt(api_key_raw.encode()).decode()
+                # API key entry – password masked
+                api_key_raw = st.text_input(
+                    f"{model.split(' ')[0]} API key",
+                    type="password",
+                    placeholder="Enter your API key …",
+                    key="api_key_input"
+                )
 
-            # Provider link for convenience
-            provider_link = {
-                "ChatGPT (OpenAI)": "https://platform.openai.com/account/api-keys",
-                "Claude (Anthropic)": "https://console.anthropic.com/account/keys"
-            }
-            st.markdown(
-                f"You can get your API key from → [{provider_link[model]}]({provider_link[model]})",
-                unsafe_allow_html=False
-            )
+                if api_key_raw:
+                    # Generate per‑session Fernet key if not present
+                    if 'fernet_key' not in st.session_state:
+                        st.session_state['fernet_key'] = Fernet.generate_key().decode()
+                    f = Fernet(st.session_state['fernet_key'].encode())
+                    st.session_state['api_key_enc'] = f.encrypt(api_key_raw.encode()).decode()
 
-        
+                # Provider link for convenience
+                provider_link = {
+                    "ChatGPT (OpenAI)": "https://platform.openai.com/account/api-keys",
+                    "Claude (Anthropic)": "https://console.anthropic.com/account/keys"
+                }
+                st.markdown(
+                    f"You can get your API key from → [{provider_link[model]}]({provider_link[model]})",
+                    unsafe_allow_html=False
+                )
+
         # === Automation Settings ===
         with st.expander("📡 Automation Settings", expanded=True):
             # Auto/Manual toggle
@@ -355,7 +361,7 @@ with right:
                     st.session_state.auto_mode = new_auto_mode
                     scheduler = get_scheduler()
                     scheduler.toggle_auto_mode()
-            
+
             with col_auto2:
                 new_paused = st.toggle(
                     "Pause",
@@ -366,7 +372,7 @@ with right:
                     st.session_state.is_paused = new_paused
                     scheduler = get_scheduler()
                     scheduler.toggle_pause()
-            
+
             # Interval selector
             col_int1, col_int2 = st.columns([1, 2])
             with col_int1:
@@ -383,12 +389,12 @@ with right:
                     st.session_state.refresh_interval = new_interval
                     scheduler = get_scheduler()
                     scheduler.set_interval(new_interval)
-            
+
             # Status display
             scheduler = get_scheduler()
             status = scheduler.get_status()
             api_info = status.get("api_usage", {})
-            
+
             # API Usage
             col_api1, col_api2 = st.columns([2, 1])
             with col_api1:
@@ -396,7 +402,7 @@ with right:
                 st.progress(min(usage_pct/100, 1.0))
             with col_api2:
                 st.caption(f"API: {api_info.get('current', 0)}/{api_info.get('limit', 1000)}")
-            
+
             # Next update time
             if status.get("next_run"):
                 next_dt = dt_datetime.fromisoformat(status["next_run"])
@@ -406,7 +412,7 @@ with right:
                     st.caption(f"⏱️ Next auto-update: {remaining:.0f} min")
                 else:
                     st.caption("⏱️ Update available now")
-            
+
             # Error alert
             if status.get("should_alert"):
                 st.error("⚠️ Multiple errors detected. Check logs.")
@@ -415,7 +421,7 @@ with right:
                     with st.expander("Recent errors", expanded=False):
                         for err in recent_errors[-3:]:
                             st.caption(f"{err.get('step', 'unknown')}: {err.get('error', 'error')[:100]}")
-            
+
             # Refresh Now button
             if st.button("🔄 Refresh Now", key="btn_refresh_now", width='stretch'):
                 with st.spinner("Running full pipeline..."):
@@ -429,17 +435,18 @@ with right:
                     }
                     result = pipeline.run_full_pipeline(context)
                     st.session_state.last_update_time = dt_datetime.now().isoformat()
-                    
+
                     if result.get("success"):
                         st.success(f"Pipeline completed: {result.get('steps_completed', 0)}/4 steps")
                     else:
                         st.warning(f"Pipeline blocked: {result.get('blocked_reason', 'Unknown')}")
-            
+
             # Archive info
             archiver = get_archiver()
             total_size = archiver.get_total_size()
             if total_size > 0:
                 st.caption(f"📦 Archives: {total_size:.1f} MB in data/archive/")
+
         
         # Row: Strategy
         r1c1, r1c2, r1c3, r1c4= st.columns([1, 2, 1, 2])
@@ -516,7 +523,16 @@ with right:
                 output_area.empty()  # Clean Container
 
                 with output_area:
-                    agent = DataAgent(openai_api_key=os.getenv("OPENAI_API_KEY"))
+                    # Decrypt user‑provided API key for LLM usage
+                    model = st.session_state.get('selected_model','ChatGPT (OpenAI)')
+                    if model != 'ChatGPT (OpenAI)':
+                        st.error('Claude model is not supported for news collection currently.')
+                        st.stop()
+                    api_key = None
+                    if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
+                        f = Fernet(st.session_state['fernet_key'].encode())
+                        api_key = f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+                    agent = DataAgent(openai_api_key=api_key)
                     run_news_pipeline(agent, st.session_state.sources, st.container(), limit=10)
 
         with c2:
@@ -537,9 +553,16 @@ with right:
                         "target_profit": st.session_state.target_profit,
                     }
 
+                    # Decrypt API key from session state (same pattern as News button)
+                    api_key = None
+                    if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
+                        f = Fernet(st.session_state['fernet_key'].encode())
+                        api_key = f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+
                     # Initialize TradingAgent correctly
                     t_agent = TradingAgent(
                         name="GoldTrader",
+                        api_key=api_key,
                         json_path="data/gold_news.json",
                         context=context
                     )
