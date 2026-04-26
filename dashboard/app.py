@@ -56,6 +56,34 @@ st.session_state.setdefault("last_update_time", None)
 st.session_state.setdefault("pipeline_running", False)
 
 
+# ---------- Helper Functions ----------
+def _resolve_api_key(user_provided_key: str = None) -> str | None:
+    """
+    Resolve API key with fallback chain: user input -> env var -> st.secrets.
+    Priority: user_provided_key > os.getenv > st.secrets > None
+    """
+    if user_provided_key:
+        return user_provided_key
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        return env_key
+    try:
+        if "openai_api_key" in st.secrets:
+            return st.secrets["openai_api_key"]
+    except Exception:
+        pass
+    return None
+
+
+def _get_user_api_key() -> str | None:
+    """
+    Retrieve decrypted user-provided API key from session state.
+    Returns None if no user key is stored.
+    """
+    if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
+        f = Fernet(st.session_state['fernet_key'].encode())
+        return f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+    return None
 
 
 # ---------- Data ----------
@@ -336,6 +364,12 @@ with right:
                         st.session_state['fernet_key'] = Fernet.generate_key().decode()
                     f = Fernet(st.session_state['fernet_key'].encode())
                     st.session_state['api_key_enc'] = f.encrypt(api_key_raw.encode()).decode()
+                    # Persistent security warning for user-provided keys
+                    st.warning(
+                        "⚠️ Security Notice: For your protection, we recommend using a "
+                        "one-time or restricted API key that cannot access sensitive billing "
+                        "information. Do not use your primary API key."
+                    )
 
                 # Provider link for convenience
                 provider_link = {
@@ -528,10 +562,10 @@ with right:
                     if model != 'ChatGPT (OpenAI)':
                         st.error('Claude model is not supported for news collection currently.')
                         st.stop()
-                    api_key = None
-                    if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
-                        f = Fernet(st.session_state['fernet_key'].encode())
-                        api_key = f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+                    api_key = _resolve_api_key(_get_user_api_key())
+                    if not api_key:
+                        st.error("No API key available. Please enter your OpenAI API key above, or set OPENAI_API_KEY environment variable.")
+                        st.stop()
                     agent = DataAgent(openai_api_key=api_key)
                     run_news_pipeline(agent, st.session_state.sources, st.container(), limit=10)
 
@@ -553,11 +587,11 @@ with right:
                         "target_profit": st.session_state.target_profit,
                     }
 
-                    # Decrypt API key from session state (same pattern as News button)
-                    api_key = None
-                    if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
-                        f = Fernet(st.session_state['fernet_key'].encode())
-                        api_key = f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+                    # Resolve API key with fallback chain
+                    api_key = _resolve_api_key(_get_user_api_key())
+                    if not api_key:
+                        st.error("No API key available. Please enter your OpenAI API key above, or set OPENAI_API_KEY environment variable.")
+                        st.stop()
 
                     # Initialize TradingAgent correctly
                     t_agent = TradingAgent(
@@ -671,8 +705,12 @@ with right:
                     }
 
                     # Initialize RiskAgent correctly
+                    api_key = _resolve_api_key(_get_user_api_key())
+                    if not api_key:
+                        st.error("No API key available. Please enter your OpenAI API key above, or set OPENAI_API_KEY environment variable.")
+                        st.stop()
                     r_agent = RiskAgent(
-                        api_key=os.getenv("OPENAI_API_KEY"),
+                        api_key=api_key,
                         context=context
                     )
 

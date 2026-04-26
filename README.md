@@ -1,42 +1,42 @@
+# AIGoldAnalyst
+
 An AI-powered virtual gold trading system that uses Large Language Models (LLM) for market analysis, trading decisions, and risk management.
 
 ## 📋 Project Overview
 
-Virtual Trading Officer is an intelligent gold trading decision system that integrates multiple AI agents:
-- 📰 **Data Agent (DataAgent)**: Collects and analyzes gold market news from multiple sources
-- 💹 **Trading Agent (TradingAgent)**: Generates trading strategies and decisions based on market analysis
+AIGoldAnalyst is an intelligent gold trading decision system that integrates multiple AI agents:
+
+- 📰 **Data Agent (DataAgent)**: Collects and analyzes gold market news from multiple sources (Yahoo, Investing.com, MetalsDaily)
+- 💹 **Trading Agent (TradingAgent)**: Generates multi-strategy analysis and trading decisions based on market news
 - 🛡️ **Risk Agent (RiskAgent)**: Evaluates trading strategy risks and provides risk control recommendations
 - 📊 **History Agent (HistoryAgent)**: Analyzes historical trading records and performance metrics
 
-The system provides a web dashboard for visual analysis and interactive operations, along with RESTful API services for programmatic access.
+The system provides a web dashboard for visual analysis and interactive operations, powered by an automated 4-step pipeline.
 
 ## 🏗️ Project Structure
 
 ```
-VirtualTradingOfficer/
+AIGoldAnalyst/
 ├── agents/                    # AI agent modules
 │   ├── data_agent.py         # Data collection and news analysis agent
-│   ├── trading_agent.py      # Trading decision agent
+│   ├── trading_agent.py      # Trading decision agent (GPT-4o-mini)
 │   ├── risk_agent.py         # Risk assessment agent
-│   ├── history_agent.py      # Historical data analysis agent
-│   └── models/               # Different LLM model implementations
-│       ├── gpt4o_agent.py
-│       ├── deepseek_agent.py
-│       ├── claude_haiku_agent.py
-│       └── ...
+│   └── history_agent.py      # Historical data analysis agent
 ├── dashboard/                # Streamlit web dashboard
 │   ├── app.py               # Main application entry
-│   ├── components/          # UI components
-│   └── style.css           # Style files
-├── services/                # FastAPI backend services
-│   ├── trading_service.py   # Trading service API
-│   ├── data_service.py      # Data service API
-│   └── risk_service.py      # Risk service API
+│   ├── style.css            # Custom styles
+│   ├── auto_scheduler.py    # Automation scheduler with rate limiting & error tracking
+│   ├── auto_archive.py      # Data archiver (ZIP compression)
+│   └── pipeline_runner.py   # 4-step automated pipeline runner
+├── services/            # Reserved for future API services (v2+)
 ├── data/                    # Data directory
-│   ├── gold_history.csv    # Gold price historical data
-│   ├── gold_news.json      # News data
-│   ├── trades_history.csv  # Trading history
-│   └── news/               # News data organized by date
+│   ├── gold_history.csv     # Gold price historical data (yfinance)
+│   ├── gold_news.json       # Collected and analyzed news
+│   ├── market_analysis.json # LLM-generated market analysis
+│   ├── trading_decision.json # Structured trading decision output
+│   ├── trades_history.csv   # Trading history records
+│   └── archive/             # Compressed quarterly archives
+├── mock_trades.py           # Mock trading data generator
 ├── test/                    # Test files
 │   ├── test_data_agent.py
 │   ├── test_trading_agent.py
@@ -50,8 +50,6 @@ VirtualTradingOfficer/
 ## 🚀 Quick Start
 
 ### 1. Clone the Repository
-
-Visit the project GitHub repository (https://github.com/SchuLearn/VirtualTradingOfficer) and clone the code locally:
 
 ```bash
 git clone https://github.com/SchuLearn/VirtualTradingOfficer.git
@@ -77,236 +75,202 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+### 4. Configure API Key
 
-Create a `.env` file (optional, if using environment variables to manage API keys):
+**Option A — Enter via Dashboard (recommended)**
 
-```bash
-# OpenAI API (for GPT models)
-OPENAI_API_KEY=your_openai_api_key_here
-
-# DeepSeek API (for DeepSeek models)
-DEEPSEEK_API_KEY=your_deepseek_api_key_here
-
-# Anthropic API (for Claude models)
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-```
-
-**Note**: If environment variables are not set, the system will attempt to read from environment variables. Some features may require at least one API key to be configured.
-
-### 5. Launch Services
-
-#### Launch Dashboard (Frontend)
+Launch the dashboard and enter your OpenAI API key directly in the UI. The key is encrypted per-session using Fernet and is never stored to disk or environment variables.
 
 ```bash
 streamlit run dashboard/app.py
 ```
 
-The dashboard will automatically open in your browser at: `http://localhost:8501`
+**Option B — Environment Variable**
 
-#### Start Backend Services (Optional)
-
-If you need to use RESTful API services, you can start the backend services:
+Create a `.env` file in the project root:
 
 ```bash
-# Trading service (port 8000)
-python -m uvicorn services.trading_service:app --reload --port 8000
-
-# Data service (port 8081)
-python -m uvicorn services.data_service:app --reload --port 8081
-
-# Risk service (port 8083)
-python -m uvicorn services.risk_service:app --reload --port 8083
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-**Note**: If running service files directly, default ports may differ (trading_service defaults to 8082). It's recommended to use the above commands to specify ports.
+The dashboard also supports Anthropic API keys (Claude) via the UI selector.
+
+### 5. Launch the Dashboard
+
+```bash
+streamlit run dashboard/app.py
+```
+
+The dashboard will open at `http://localhost:8501`.
 
 ### 6. Run Tests
 
-Run agent tests with:
-
 ```bash
-# Test data agent
+# Test individual agents
 python test/test_data_agent.py
-
-# Test trading agent
 python test/test_trading_agent.py
-
-# Test risk agent
 python test/test_risk_agent.py
+
+# Or with pytest
+python -m pytest test/
 ```
 
-## 📖 User Guide
+## 📖 Dashboard Guide
 
-### Dashboard Features
+### Control Panel
 
-1. **📰 News (News Analysis)**
-   - Collect gold market news from multiple sources
-   - Filter and analyze relevant news using LLM
-   - Generate market summaries and trend analysis
+The right-hand control panel lets you configure:
 
-2. **⚡ Actions (Trading Decisions)**
-   - Generate trading strategies based on news analysis
-   - Provide multiple strategy options and recommendations
-   - Display confidence levels, risk/return ratios, and other information
+- **AI Model & API Key Settings** — Select LLM provider (ChatGPT/Claude) and enter your API key securely
+- **Strategy** — Trading style: Scalping, Swing, or Seasonal
+- **Investment** — Risk profile: Passive, Active, or Aggressive
+- **Buy/Sell Price Thresholds** — Price boundaries for trade execution
+- **Target Profit** — Desired profit margin
 
-3. **🛡️ Risk (Risk Assessment)**
-   - Evaluate risk levels for each trading strategy
-   - Provide risk mitigation recommendations
-   - Display strategy approval status
+### Automation Settings
 
-4. **📊 Trading History**
-   - View historical trading records
-   - Analyze trading performance metrics
-   - Visualize equity curves
+- **Auto-refresh** — Toggle automated pipeline execution on/off
+- **Pause** — Temporarily pause the pipeline
+- **Refresh Interval** — Set pipeline frequency (15/30/60/120/240 min)
+- **API Usage Meter** — Tracks daily API request usage
+- **Refresh Now** — Manually trigger the full pipeline immediately
 
-### API Usage Examples
+### News Panel (📰)
 
-#### Trading Service
+1. Select news sources (Yahoo, Investing.com, MetalsDaily)
+2. Click **News** to collect and analyze the latest gold market news
+3. The system filters relevant articles via LLM, fetches full text, scores quality, and generates a market summary
 
-```bash
-# Generate trading strategy
-curl -X POST "http://localhost:8000/generate_strategy" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "json_path": "data/gold_news.json",
-    "use_deepseek": true
-  }'
+### Actions Panel (⚡)
 
-# Check latest decision
-curl "http://localhost:8000/check_latest"
+1. Ensure news data is loaded (run News first)
+2. Click **Actions** to generate multi-strategy trading decisions
+3. Choose from Conservative, Balanced, or Aggressive strategies with confidence scores, risk/return ratings, and a recommended action (BUY/SELL/HOLD)
+
+### Risk Panel (🛡️)
+
+Evaluates the risk level of the current trading recommendation and provides risk mitigation advice.
+
+### Trading History (📊)
+
+View historical trades and performance metrics. If no history exists, generate mock data with one click.
+
+## 🔧 Automation System
+
+### Pipeline Runner
+
+The `PipelineRunner` executes a full 4-step pipeline:
+
+```
+Step 1: Fetch Gold Price  →  Step 2: Collect & Analyze News
+    →  Step 3: Generate Trading Decision  →  Step 4: Risk Analysis
 ```
 
-#### Data Service
+Can be triggered manually (Refresh Now) or scheduled via `AutoScheduler`.
 
-```bash
-# Collect news
-curl -X POST "http://localhost:8081/collect" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sources": ["yahoo", "investing.com"],
-    "limit": 10
-  }'
+### Auto Scheduler
 
-# Analyze news
-curl -X POST "http://localhost:8081/analyze" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "json_path": "data/gold_news.json",
-    "min_quality_score": 30
-  }'
-```
+- **RateLimiter** — Tracks API usage (default 1000 requests/day)
+- **ErrorTracker** — Alerts after 3+ consecutive failures
+- **LLMFallbackChain** — Attempts OpenAI → Claude on failure
+- **Scheduling** — Configurable intervals (15–240 min)
 
-## 🔧 Configuration
+### Auto Archiver
 
-### News Quality Scoring Configuration
+- Compresses data files into quarterly ZIP archives
+- Uses maximum compression (ZIP_DEFLATED level 9)
+- Archives stored in `data/archive/` with naming like `gold_2025_Q1.zip`
 
-Edit `config/news_quality_scorer.yaml` to customize news quality scoring rules.
+## 🔐 Secure API Key Handling
 
-### Trading Parameters
+API keys entered via the dashboard UI are:
 
-In the dashboard control panel, you can adjust:
-- **Strategy**: Trading strategy type (Scalping/Swing/Seasonal)
-- **Investment**: Investment style (Passive/Active/Aggressive)
-- **Buy/Sell Price Threshold**: Buy/sell price thresholds
-- **Target Profit**: Target profit margin
+1. Encrypted immediately with a per-session Fernet key
+2. Stored only in `st.session_state` (memory only, never persisted)
+3. Decrypted in-memory only when needed for LLM calls
+4. Never written to disk, environment variables, or logs
 
 ## 🧪 Testing
-
-The project includes multiple test files to verify component functionality:
 
 ```bash
 # Run all tests
 python -m pytest test/
 
-# Run specific test
+# Run individual tests
 python test/test_data_agent.py
+python test/test_trading_agent.py
+python test/test_risk_agent.py
+python test/test_historical_news_collection.py
 ```
 
 ## 📦 Dependencies
 
-Main dependencies:
-- **streamlit**: Web dashboard framework
-- **fastapi/uvicorn**: RESTful API services
-- **openai**: OpenAI API client
-- **anthropic**: Claude API client
-- **pandas/numpy**: Data processing
-- **yfinance**: Financial data retrieval
-- **beautifulsoup4/newspaper3k**: Web scraping and news parsing
-- **altair/matplotlib**: Data visualization
+- **streamlit** — Web dashboard framework
+- **openai** — OpenAI API client
+- **anthropic** — Claude API client
+- **pandas/numpy** — Data processing
+- **yfinance** — Gold price data retrieval
+- **beautifulsoup4/newspaper3k** — Web scraping and news parsing
+- **altair** — Interactive charts
+- **cryptography** — Fernet encryption for API key handling
+- **python-dotenv** — Environment variable loading
 
 See `requirements.txt` for the complete list.
 
-## 🛠️ Development
+## 🛠️ Troubleshooting
 
-### Adding New LLM Models
+### Import Error: `ModuleNotFoundError: No module named 'mock_trades'`
 
-1. Create a new agent class in the `agents/models/` directory
-2. Inherit from or reference existing agent implementations
-3. Integrate the new model in `agents/trading_agent.py`
+Ensure you're running from the project root directory. Check that `mock_trades.py` exists in the root.
 
-### Adding New Data Sources
+### API Key Errors
 
-1. Add a new data source method in `agents/data_agent.py`
-2. Update the news source selector in the dashboard
+- If using the UI: make sure the key was entered in the current session
+- If using `.env`: verify the file exists and `OPENAI_API_KEY` is set correctly
+- Check that your API key has sufficient quota remaining
 
-## 📝 Important Notes
+### Port Already in Use
 
-1. **API Keys**: Ensure necessary API keys are set to use LLM features
-2. **Data Files**: Initial data files may need to be downloaded or generated on first run
-3. **Network Connection**: News collection features require network connectivity
-4. **Python Version**: Python 3.9+ is recommended
+```bash
+# Use a different port
+streamlit run dashboard/app.py --server.port 8502
+```
 
-## 🔍 Troubleshooting
+### Missing Data Files
 
-### Common Issues
+- `data/gold_history.csv` is fetched automatically via yfinance on first run
+- Run the News pipeline to generate `data/gold_news.json`
+- Run the Actions pipeline to generate `data/trading_decision.json`
+- Generate mock trades: click **Generate mock trading data** in the History panel
 
-1. **Import Error: `ModuleNotFoundError: No module named 'mock_trades'`**
-   - Ensure you're running commands from the project root directory
-   - Check that `mock_trades.py` exists in the root directory
+### News Collection Fails
 
-2. **API Key Errors**
-   - Ensure correct environment variables are set
-   - Check that `.env` file exists and is formatted correctly
-   - Verify API keys are valid and have sufficient quota
+- Check your network connection
+- Some sources may require VPN or proxy
+- Review console output for specific error messages
 
-3. **Port Already in Use**
-   - Change the port number: `--port 8001`
-   - Or stop the process using the port
+## 📝 Architecture Notes
 
-4. **Missing Data Files**
-   - Run `python dataset/scripts/mock_trades.py` to generate mock trading data
-   - Ensure `data/gold_history.csv` exists (can be obtained from yfinance)
+### Agent Design
 
-5. **Streamlit Won't Start**
-   - Check if streamlit is installed: `pip install streamlit`
-   - Ensure you're running the command from the correct directory
+Each agent is a self-contained class with:
+- A public API method (e.g., `run()`, `generate_trade_decision()`)
+- Private helper methods prefixed with `_`
+- Session-state or constructor-based API key injection
+- Error handling with graceful fallback and logging
 
-6. **News Collection Fails**
-   - Check network connection
-   - Some news sources may require VPN or proxy
-   - Check console error messages
+### LLM Model Selection
 
-# Trading AI Application
+- **ChatGPT (GPT-4o-mini)** — default for all pipeline steps
+- **Claude (Anthropic)** — selectable via UI for decision generation
+- Model selection is stored in `st.session_state['selected_model']`
 
-## Setup Instructions
+### JSON Data Flow
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/trading_ai.git
-   ```
+```
+gold_news.json  →  TradingAgent.load_news()  →  analyze_market_strategies()
+                                              →  build_structured_decision()
+                                              →  trading_decision.json
 
-2. Set environment variables:
-   ```bash
-   export EAS_TOKEN=your_secret_token
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the application:
-   ```bash
-   python main.py
-   ```
+market_analysis.json  →  RiskAgent  →  risk_report.json
+```

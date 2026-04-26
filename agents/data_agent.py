@@ -19,11 +19,13 @@ load_dotenv()
 
 
 class DataAgent:
-    def __init__(self, openai_api_key=None, config_path="news_quality_scorer.yaml"):
+    def __init__(self, openai_api_key=None, config_path=None):
         """Data Agent: Fetch market data + news articles + call LLM for analysis with quality scoring"""
         self.client = OpenAI(api_key=openai_api_key or os.getenv("OPENAI_API_KEY"))
 
         # Load quality scoring configuration
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(__file__), "..", "config", "news_quality_scorer.yaml")
         self.config = self._load_config(config_path)
 
 
@@ -93,6 +95,20 @@ class DataAgent:
             print(f"[WARN] Failed to load config: {e}. Using default settings.")
             return self._default_config()
 
+    def _normalize_weight_factors(self, weight_factors_raw):
+        """
+        Normalize weight_factors to dict format for backward compatibility.
+        Handles both list format: [{"key": val}, ...]
+        and dict format: {"key": val, ...}
+        """
+        if weight_factors_raw is None:
+            return {}
+        if isinstance(weight_factors_raw, list):
+            return {k: v for d in weight_factors_raw for k, v in d.items()}
+        if isinstance(weight_factors_raw, dict):
+            return weight_factors_raw
+        return {}
+
     def _default_config(self):
         """Default configuration if YAML file not found"""
         return {
@@ -129,7 +145,7 @@ class DataAgent:
         # Full text bonus
         if news_item.get("full_text"):
             full_text_len = len(news_item["full_text"])
-            weight_factors = source_config.get("weight_factors", {})
+            weight_factors = self._normalize_weight_factors(source_config.get("weight_factors"))
 
             # Has full text bonus
             score += weight_factors.get("has_full_text", 10)

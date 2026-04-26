@@ -17,6 +17,38 @@ from dashboard.auto_scheduler import (
 from dashboard.auto_archive import get_archiver, AutoArchiver
 
 
+def _resolve_api_key_pipeline(user_provided_key: str = None) -> str | None:
+    """
+    Resolve API key with fallback chain: user input -> env var -> st.secrets.
+    Priority: user_provided_key > os.getenv > st.secrets > None
+    """
+    if user_provided_key:
+        return user_provided_key
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        return env_key
+    try:
+        if "openai_api_key" in st.secrets:
+            return st.secrets["openai_api_key"]
+    except Exception:
+        pass
+    return None
+
+
+def _get_user_api_key_from_enc(encrypted_key: str | None = None, fernet_key: str | None = None) -> str | None:
+    """
+    Decrypt user-provided API key from encrypted session state.
+    Returns None if no valid key can be decrypted.
+    """
+    if encrypted_key and fernet_key:
+        try:
+            f = Fernet(fernet_key.encode())
+            return f.decrypt(encrypted_key.encode()).decode()
+        except Exception:
+            pass
+    return None
+
+
 class PipelineRunner:
     """Execute the full automated pipeline: Gold -> News -> Decision -> Risk"""
     
@@ -149,13 +181,16 @@ class PipelineRunner:
         
         try:
             from agents.trading_agent import TradingAgent
-            
-            # Decrypt user‑provided API key if present
-            api_key = None
-            if api_key_enc and st.session_state.get('fernet_key'):
-                f = Fernet(st.session_state['fernet_key'].encode())
-                api_key = f.decrypt(api_key_enc.encode()).decode()
-            
+
+            # Resolve API key with fallback chain
+            user_key = _get_user_api_key_from_enc(api_key_enc, st.session_state.get('fernet_key'))
+            api_key = _resolve_api_key_pipeline(user_key)
+            if not api_key:
+                return {
+                    "success": False,
+                    "message": "No API key available. Please enter your OpenAI API key in settings."
+                }
+
             agent = TradingAgent(
                 name="AutoTrader",
                 api_key=api_key,
@@ -196,10 +231,9 @@ class PipelineRunner:
         
         try:
             from agents.risk_agent import RiskAgent
-            
-            openai_key = os.getenv("OPENAI_API_KEY")
+
             deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-            
+
             # Check if trading decision exists
             decision_path = "data/trading_decision.json"
             if not os.path.exists(decision_path):
@@ -207,7 +241,19 @@ class PipelineRunner:
                     "success": False,
                     "message": "No trading decision found"
                 }
-            
+
+            # Resolve API key with fallback chain
+            user_key = _get_user_api_key_from_enc(
+                st.session_state.get('api_key_enc'),
+                st.session_state.get('fernet_key')
+            )
+            openai_key = _resolve_api_key_pipeline(user_key)
+            if not openai_key:
+                return {
+                    "success": False,
+                    "message": "No API key available. Please enter your OpenAI API key in settings."
+                }
+
             agent = RiskAgent(
                 decision_path=decision_path,
                 out_path="data/risk_report.json",

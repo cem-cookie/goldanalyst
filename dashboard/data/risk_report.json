@@ -1,82 +1,85 @@
 {
   "asset": "XAU/USD",
-  "evaluated_at": "2026-04-22T23:25:16.097938",
+  "evaluated_at": "2023-10-01T00:00:00Z",
   "items": [
     {
       "id": 1,
       "approval": "approved",
-      "approval_score": 65,
+      "approval_score": 70,
       "risk_level": "Low",
       "key_risks": [
-        "Opportunity cost if market moves significantly",
-        "Trend misread or early signal",
-        "Market reversal during hold period"
+        "overnight gaps",
+        "market reversals",
+        "news shocks",
+        "time decay"
       ],
       "mitigations": [
-        "Define clear re-entry/exit triggers",
-        "Set review cadence (hourly reviews)",
-        "Monitor key support/resistance levels"
+        "monitor geopolitical news",
+        "set tight stop-loss orders",
+        "diversify portfolio",
+        "limit position size"
       ],
-      "notes": "Heuristic assessment for Aggressive investor using Scalping strategy. Action: HOLD, Confidence: 4/5, Expected Risk: low, Expected Return: low."
+      "notes": "The Conservative Safe-Haven strategy aligns well with the user's balanced risk profile, providing stability with low risk exposure."
     },
     {
       "id": 2,
-      "approval": "approved",
-      "approval_score": 74,
+      "approval": "conditional",
+      "approval_score": 55,
       "risk_level": "Medium",
       "key_risks": [
-        "Further drawdown during correction phase",
-        "Macro shock affecting safe-haven flows",
-        "Position liquidation due to margin calls",
-        "Opportunity cost if trend continues without entry"
+        "overnight gaps",
+        "market reversals",
+        "news shocks",
+        "time decay"
       ],
       "mitigations": [
-        "Dollar-cost averaging (DCA) strategy",
-        "Tight stop-loss at technical support",
-        "Position sizing within portfolio limits",
-        "Hedge via put options if capital permits"
+        "implement stop-loss orders",
+        "monitor market conditions closely",
+        "limit position size to 30%",
+        "diversify investments"
       ],
-      "notes": "Heuristic assessment for Aggressive investor using Scalping strategy. Action: BUY, Confidence: 3/5, Expected Risk: medium, Expected Return: medium."
+      "notes": "The Balanced Positioning strategy presents moderate risks that require careful monitoring, making it conditionally approved for the user's profile."
     },
     {
       "id": 3,
-      "approval": "approved",
-      "approval_score": 81,
+      "approval": "rejected",
+      "approval_score": 35,
       "risk_level": "High",
       "key_risks": [
-        "Further drawdown during correction phase",
-        "Macro shock affecting safe-haven flows",
-        "Position liquidation due to margin calls",
-        "Opportunity cost if trend continues without entry"
+        "overnight gaps",
+        "market reversals",
+        "news shocks",
+        "time decay",
+        "high volatility"
       ],
       "mitigations": [
-        "Dollar-cost averaging (DCA) strategy",
-        "Tight stop-loss at technical support",
-        "Position sizing within portfolio limits",
-        "Hedge via put options if capital permits"
+        "avoid high leverage",
+        "set strict stop-loss limits",
+        "limit position size",
+        "stay informed on geopolitical events"
       ],
-      "notes": "Heuristic assessment for Aggressive investor using Scalping strategy. Action: BUY, Confidence: 2/5, Expected Risk: high, Expected Return: high."
+      "notes": "The Aggressive Speculation strategy is too risky for the user's balanced profile, leading to a rejection due to high expected risk."
     }
   ],
   "summary": {
-    "portfolio_risk": "Safe",
-    "comment": "Portfolio-level risk assessment for Aggressive investor using Scalping strategy. 3/3 strategies approved, 0 rejected. 1 strategies flagged as high-risk. Overall portfolio stance: Safe."
+    "portfolio_risk": "Moderate",
+    "comment": "The overall portfolio risk is moderate, with one approved strategy providing stability and another conditionally approved requiring careful management."
   },
   "user_context": {
-    "strategy_type": "Scalping",
-    "investment_level": "Aggressive",
-    "buy_price_threshold": 4727.0,
-    "sell_price_threshold": 4728.0,
-    "target_profit": 0.5
+    "strategy_type": "Swing",
+    "investment_level": "Active",
+    "buy_price_threshold": 3950.0,
+    "sell_price_threshold": 4100.0,
+    "target_profit": 0.1
   },
   "source_decision": {
     "asset": "XAU/USD",
-    "timestamp": "2026-04-22T23:24:39.286691",
+    "timestamp": "2026-04-26T21:27:06.497565",
     "market_summary": {
-      "sentiment": "Cautiously bearish due to recent declines and uncertainty in monetary policy.",
-      "trend": "Downward trend in gold prices with potential for volatility based on geopolitical events and Fed policy.",
+      "sentiment": "Cautiously bearish due to geopolitical tensions and potential changes in US monetary policy.",
+      "trend": "Short-term downtrend with volatility, but long-term outlook remains uncertain.",
       "volatility": "high",
-      "comment": "In light of the current market conditions and the uncertainty surrounding monetary policy and geopolitical events, a conservative approach of holding gold is optimal to mitigate risk while waiting for clearer signals in the market."
+      "comment": "In the current environment of uncertainty and potential for further declines in gold prices, a conservative approach of holding gold is optimal to mitigate risks while still maintaining exposure to a traditionally safe asset."
     }
   }
 }
