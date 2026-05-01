@@ -47,6 +47,7 @@ analysis/
 data/*.json
 data/*.csv
 data/temp_*.json
+data/archive/
 !data/gold_history.csv
 results/logs/
 *.log

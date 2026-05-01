@@ -174,3 +174,99 @@ class TestRun:
             result = agent.run()
             assert result["recommendation"]["action"] == "HOLD"
             assert "No selected news" in result["market_summary"]["comment"]
+
+
+class TestPositionSizing:
+    """Tests for position sizing functionality."""
+
+    def test_calc_position_size_standard(self):
+        """Standard calculation: 100k balance, 8 confidence (80%), 2% risk."""
+        agent = TradingAgent(api_key="test-key")
+        size = agent.calculate_position_size(
+            account_balance=100000,
+            confidence=8,
+            user_risk_percent=0.02,
+            gold_price=3500
+        )
+        # Base = 100000 * 0.02 / 3500 = 0.5714 oz
+        # Scaled by 0.8 = 0.457 oz
+        # Clamped to min 0.01, max 100 -> 0.46 oz
+        assert 0.45 <= size <= 0.46
+
+    def test_calc_position_size_zero_confidence(self):
+        """Zero confidence should return small but valid size (using default scale)."""
+        agent = TradingAgent(api_key="test-key")
+        size = agent.calculate_position_size(
+            account_balance=100000,
+            confidence=0,
+            user_risk_percent=0.02,
+            gold_price=3500
+        )
+        # Uses default_confidence_scale=0.5
+        # Base = 100000 * 0.02 / 3500 = 0.5714
+        # Scaled by 0.5 = 0.285 oz
+        assert 0.28 <= size <= 0.29
+
+    def test_calc_position_size_max_confidence(self):
+        """Full confidence (10) should return full position size."""
+        agent = TradingAgent(api_key="test-key")
+        size = agent.calculate_position_size(
+            account_balance=100000,
+            confidence=10,
+            user_risk_percent=0.02,
+            gold_price=3500
+        )
+        # Base = 100000 * 0.02 / 3500 = 0.5714
+        # Scaled by 1.0 = 0.5714 oz
+        assert 0.57 <= size <= 0.58
+
+    def test_calc_position_size_clamps_to_max(self):
+        """Position should be capped at max_trade_size_oz."""
+        agent = TradingAgent(api_key="test-key")
+        # Very high balance would exceed max
+        size = agent.calculate_position_size(
+            account_balance=10_000_000,  # 10M
+            confidence=10,
+            user_risk_percent=0.10,  # 10% risk
+            gold_price=3500
+        )
+        # Without clamp: 10M * 0.1 / 3500 = 285.7 oz
+        # Should clamp to max 100 oz
+        assert size <= 100.0
+
+    def test_calc_position_size_clamps_to_min(self):
+        """Position below min should return min_size (not 0)."""
+        agent = TradingAgent(api_key="test-key")
+        # Very small balance - returns min_size
+        size = agent.calculate_position_size(
+            account_balance=100,  # $100
+            confidence=1,
+            user_risk_percent=0.01,
+            gold_price=3500
+        )
+        # Base = 100 * 0.01 / 3500 = 0.0002857
+        # scaled by 0.1 = 0.00002857
+        # clamped to min 0.01 oz
+        assert size == 0.01
+
+    def test_calc_position_size_invalid_balance(self):
+        """Invalid (negative) balance should return fallback."""
+        agent = TradingAgent(api_key="test-key")
+        size = agent.calculate_position_size(
+            account_balance=-1000,
+            confidence=5,
+            user_risk_percent=0.02
+        )
+        assert size == 1.0  # fallback_position_size_oz
+
+    def test_calc_position_size_no_price(self):
+        """Missing price should use fallback."""
+        agent = TradingAgent(api_key="test-key")
+        size = agent.calculate_position_size(
+            account_balance=100000,
+            confidence=5,
+            user_risk_percent=0.02,
+            gold_price=None
+        )
+        # Should use fallback price 3500
+        assert size > 0

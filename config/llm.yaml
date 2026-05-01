@@ -1,0 +1,3 @@
+llm_timeout_seconds: 15
+llm_max_retries: 3
+llm_base_delay_seconds: 1

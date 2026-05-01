@@ -2,6 +2,14 @@ import os
 import re
 import json
 from datetime import datetime
+from pathlib import Path
+from typing import Literal
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
 try:
     from openai import OpenAI
 except ImportError:
@@ -24,6 +32,34 @@ except ImportError:
 load_dotenv()
 
 
+try:
+    from utils.llm_wrapper import LLM_CONFIG
+except ImportError:
+    LLM_CONFIG = {"llm_timeout_seconds": 15, "llm_max_retries": 3, "llm_base_delay_seconds": 1}
+
+
+def _load_trading_config() -> dict:
+    """Load trading configuration from config/trading.yaml with defaults."""
+    config_path = Path(__file__).parent.parent / "config" / "trading.yaml"
+    defaults = {
+        "max_risk_percent": 0.02,
+        "min_trade_size_oz": 0.01,
+        "max_trade_size_oz": 100.0,
+        "default_confidence_scale": 0.5,
+        "fallback_position_size_oz": 1.0,
+    }
+    if config_path.exists():
+        try:
+            import yaml
+            with open(config_path, "r", encoding="utf-8") as f:
+                cfg = yaml.safe_load(f)
+            if cfg:
+                defaults.update(cfg)
+        except Exception as e:
+            print(f"[WARN] Failed to load trading config: {e}")
+    return defaults
+
+
 class TradingAgent:
     """Trading Agent: Manages account state and trading decisions"""
 
@@ -37,9 +73,79 @@ class TradingAgent:
         self.fee_bps = fee_bps
         self.json_path = json_path
         self.persist_outputs = persist_outputs
-        # Initialize OpenAI client (ChatGPT) – only used for LLM calls
+        self._trading_config = _load_trading_config()
+        self._context = context or {}
+# Initialize OpenAI client (ChatGPT) – only used for LLM calls
         self.client = OpenAI(api_key=api_key or os.getenv("OPENAI_API_KEY"))
 
+    def _calc_position_size(
+        self,
+        account_balance: float,
+        confidence: float,
+        user_risk_percent: float | None = None,
+        gold_price: float | None = None,
+    ) -> float:
+        """
+        Calculate position size in ounces based on account balance, confidence, and risk settings.
+
+        Args:
+            account_balance: Total account equity in USD
+            confidence: Trading confidence score (0-10, will be normalized to 0-1)
+            user_risk_percent: Optional user-specified risk percent (overrides config)
+            gold_price: Current gold price per oz (if None, uses fallback)
+
+        Returns:
+            Position size in ounces
+        """
+        cfg = self._trading_config
+        risk_percent = user_risk_percent if user_risk_percent is not None else cfg.get("max_risk_percent", 0.02)
+        min_size = cfg.get("min_trade_size_oz", 0.01)
+        max_size = cfg.get("max_trade_size_oz", 100.0)
+        fallback_confidence_scale = cfg.get("default_confidence_scale", 0.5)
+        fallback_size = cfg.get("fallback_position_size_oz", 1.0)
+
+        # Validate inputs
+        if account_balance <= 0 or confidence < 0:
+            print("[WARN] Invalid balance or confidence, returning fallback size")
+            return fallback_size
+        if gold_price is None or gold_price <= 0:
+            gold_price = 3500.0
+            print(f"[WARN] No gold price provided, using fallback: {gold_price}")
+
+        # Normalize confidence from 0-10 to 0-1
+        normalized_conf = max(0.0, min(1.0, confidence / 10.0))
+
+        # Base position size: balance * risk_percent / price
+        base_size = (account_balance * risk_percent) / gold_price
+
+        # Scale by confidence (use default_confidence_scale if missing)
+        effective_confidence = normalized_conf if normalized_conf > 0 else fallback_confidence_scale
+        scaled_size = base_size * effective_confidence
+
+        # Apply min/max constraints
+        final_size = max(min_size, min(max_size, scaled_size))
+
+        # Round to 2 decimal places
+        final_size = round(final_size, 2)
+
+        if final_size < min_size:
+            print(f"[WARN] Position size {final_size} below minimum {min_size}, returning 0")
+            return 0.0
+
+        return final_size
+
+    # --------------------------------------------------
+    # UI helper: wrap position size for use in Streamlit
+    # --------------------------------------------------
+    def calculate_position_size(
+        self,
+        account_balance: float,
+        confidence: float = 5,
+        user_risk_percent: float | None = None,
+        gold_price: float | None = None,
+    ) -> float:
+        """Public API for position sizing (exposes functionality to UI)."""
+        return self._calc_position_size(account_balance, confidence, user_risk_percent, gold_price)
 
     def generate_trade_decision(self, user_prompt: str) -> dict:
         """Generate a single trading decision (BUY/SELL/HOLD) with fixed JSON structure."""
@@ -55,15 +161,37 @@ Respond ONLY with valid JSON in this exact schema:
 }"""
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=0.3,
-                max_tokens=500,
+            # Get timeout from config (defaults to 15s)
+            timeout = LLM_CONFIG.get("llm_timeout_seconds", 15)
+            
+            def make_llm_call():
+                return self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=500,
+                )
+            
+            # Apply timeout wrapper
+            from utils.llm_wrapper import call_with_timeout
+            response = call_with_timeout(
+                make_llm_call,
+                timeout_seconds=timeout,
+                default_return=None,
             )
+            
+            if response is None:
+                print("[WARN] LLM call timed out, returning HOLD")
+                return {
+                    "action": "HOLD",
+                    "reasoning": "LLM request timed out",
+                    "confidence": 1,
+                    "key_factors": [],
+                    "risk_level": "medium",
+                }
 
             raw_response = response.choices[0].message.content.strip()
             clean_text = re.sub(r"^```[a-zA-Z]*\n?|```$", "", raw_response, flags=re.MULTILINE)
@@ -165,14 +293,33 @@ Respond ONLY with valid JSON in this exact schema:
         {summaries}
         """
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {"role": "system", "content": "You are an expert financial strategist who outputs valid JSON only."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.3,
-        )
+        timeout = LLM_CONFIG.get("llm_timeout_seconds", 15)
+        
+        def make_llm_call():
+            return self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": "You are an expert financial strategist who outputs valid JSON only."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+            )
+        
+        from utils.llm_wrapper import call_with_timeout
+        response = call_with_timeout(make_llm_call, timeout_seconds=timeout, default_return=None)
+        
+        if response is None:
+            print("[WARN] Strategy analysis LLM call timed out, using fallback")
+            return {
+                "sentiment": "neutral",
+                "trend": "unknown",
+                "strategies": [
+                    {"name": "Fallback Hold", "action": "HOLD", "rationale": "Timeout",
+                     "confidence": 2, "expected_risk": "Medium", "expected_return": "Medium"}
+                ],
+                "recommendation": "Fallback Hold",
+                "reasoning": "LLM timeout, holding position"
+            }
 
         raw_output = response.choices[0].message.content.strip()
         print(f"\n[LLM RAW OUTPUT]\n{raw_output}\n")

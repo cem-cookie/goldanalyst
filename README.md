@@ -274,3 +274,42 @@ gold_news.json  →  TradingAgent.load_news()  →  analyze_market_strategies()
 
 market_analysis.json  →  RiskAgent  →  risk_report.json
 ```
+
+## ⚙️ Configuration
+
+### Config Files
+
+The application uses YAML configuration files in the `config/` directory:
+
+| File | Purpose |
+|------|---------|
+| `trading.yaml` | Position sizing and risk parameters |
+| `llm.yaml` | LLM timeout and retry settings |
+| `news_quality_scorer.yaml` | News quality scoring weights |
+
+### Position Sizing
+
+Position sizing is calculated based on account balance, risk tolerance, and confidence:
+
+```
+position_size = (account_balance × risk_percent) / gold_price × confidence
+```
+
+**Configurable parameters** (in `config/trading.yaml`):
+- `max_risk_percent` — Default 2% (0.02)
+- `min_trade_size_oz` — Minimum trade size in ounces (default: 0.01)
+- `max_trade_size_oz` — Maximum trade size in ounces (default: 100)
+
+**UI controls**:
+- Risk % — Slider (0.1% to 5%)
+- Position size — Manual override or auto-calculate
+- Account balance — USD value for sizing
+
+### LLM Timeout & Retry
+
+LLM calls are protected by timeout and retry logic:
+
+- **Timeout**: Default 15 seconds (configurable in `config/llm.yaml`)
+- **Retries**: Up to 3 attempts with exponential backoff (1s → 2s → 4s)
+
+If all retries fail, the system returns a safe fallback response (e.g., HOLD action).

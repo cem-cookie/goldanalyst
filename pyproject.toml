@@ -1,0 +1,50 @@
+[project]
+name = "aigoldanalyst"
+version = "0.1.0"
+description = "AI-powered virtual gold trading system"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+authors = [
+    {name = "AIGoldAnalyst Team", email = "team@aigoldanalyst.example.com"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "altair>=6.0.0",
+    "beautifulsoup4>=4.14.0",
+    "feedparser>=6.0.0",
+    "newspaper3k>=0.2.8",
+    "numpy>=2.0.0",
+    "openai>=2.0.0",
+    "pandas>=3.0.0",
+    "python-dotenv>=1.2.0",
+    "PyYAML>=6.0.0",
+    "requests>=2.33.0",
+    "streamlit>=1.56.0",
+    "yfinance>=1.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-cov>=6.0.0",
+]
+
+[project.scripts]
+aigold = "dashboard.app:main"
+
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agents*", "dashboard*", "utils*", "mock_trades*"]
+exclude = ["test*", "tests*", "*.tests", "*.datasets*"]

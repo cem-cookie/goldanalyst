@@ -54,6 +54,9 @@ st.session_state.setdefault("refresh_interval", 60)
 st.session_state.setdefault("is_paused", False)
 st.session_state.setdefault("last_update_time", None)
 st.session_state.setdefault("pipeline_running", False)
+# Position sizing defaults
+st.session_state.setdefault("risk_percent", 2.0)
+st.session_state.setdefault("position_size_oz", None)  # None = auto-calculate
 
 
 # ---------- Helper Functions ----------
@@ -548,6 +551,56 @@ with right:
                 key="profit_input"
             )
 
+        # Row: Position Sizing Controls
+        ps1, ps2, ps3 = st.columns(3, gap="small")
+        with ps1:
+            st.markdown('<div class="param-label">⚡ Risk %</div>', unsafe_allow_html=True)
+            risk_pct = float(st.session_state.risk_percent)
+            st.session_state.risk_percent = st.number_input(
+                "Risk %",
+                min_value=0.1,
+                max_value=5.0,
+                value=risk_pct,
+                step=0.1,
+                format="%.1f",
+                label_visibility="collapsed",
+                key="risk_percent_input",
+                help="Percentage of account balance to risk per trade (default: 2%)"
+            )
+            st.caption("Risk % per trade")
+        with ps2:
+            st.markdown('<div class="param-label">📏 Position (oz)</div>', unsafe_allow_html=True)
+            pos_size = st.session_state.position_size_oz
+            st.session_state.position_size_oz = st.number_input(
+                "Position oz",
+                min_value=0.01,
+                max_value=100.0,
+                value=pos_size if pos_size else 1.0,
+                step=0.1,
+                format="%.2f",
+                label_visibility="collapsed",
+                key="position_size_input",
+                help="Position size in ounces. Leave empty for auto-calculate based on risk % and confidence."
+            )
+            st.caption("Leave empty = auto size")
+        with ps3:
+            st.markdown('<div class="param-label">💵 Account</div>', unsafe_allow_html=True)
+            if "account_balance" not in st.session_state:
+                st.session_state.account_balance = 100000.0
+            acct_bal = float(st.session_state.account_balance)
+            st.session_state.account_balance = st.number_input(
+                "Balance",
+                min_value=100.0,
+                max_value=10000000.0,
+                value=acct_bal,
+                step=1000.0,
+                format="%.0f",
+                label_visibility="collapsed",
+                key="account_balance_input",
+                help="Total account balance in USD for position sizing"
+            )
+            st.caption("Account balance (USD)")
+
         # Action buttons
         c1, c2, c3 = st.columns(3, gap="small")
         with c1:
@@ -585,6 +638,9 @@ with right:
                         "buy_price_threshold": st.session_state.buy_price_threshold,
                         "sell_price_threshold": st.session_state.sell_price_threshold,
                         "target_profit": st.session_state.target_profit,
+                        "risk_percent": st.session_state.risk_percent / 100.0,  # Convert % to decimal
+                        "position_size_oz": st.session_state.position_size_oz,
+                        "account_balance": st.session_state.account_balance,
                     }
 
                     # Resolve API key with fallback chain
@@ -612,6 +668,17 @@ with right:
                         st.markdown("### Actions\n\nNo decision produced.")
                         st.info("Please run **News** first to collect and analyze news data.")
                     else:
+                        # Calculate position size if not manually set
+                        pos_size = st.session_state.position_size_oz
+                        if pos_size is None or pos_size <= 0:
+                            confidence = decision.get("recommendation", {}).get("confidence", 5)
+                            pos_size = t_agent.calculate_position_size(
+                                account_balance=st.session_state.account_balance,
+                                confidence=confidence,
+                                user_risk_percent=st.session_state.risk_percent / 100.0,
+                                gold_price=None  # Will use fallback if not available
+                            )
+
                         # Tool function
                         def stars(n):
                             try:
@@ -685,6 +752,15 @@ with right:
 
                                 with st.expander("Rationale", expanded=(idx == 0)):
                                     st.write(s.get("rationale", ""))
+
+                        # Display position size information
+                        st.markdown("---")
+                        st.subheader("Position Sizing")
+                        st.info(
+                            f"Risk: {st.session_state.risk_percent}% | "
+                            f"Position: {pos_size:.2f} oz | "
+                            f"Account: ${st.session_state.account_balance:,.0f}"
+                        )
 
 
         # Risk button section

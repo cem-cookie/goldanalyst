@@ -1,0 +1,5 @@
+max_risk_percent: 0.02
+min_trade_size_oz: 0.01
+max_trade_size_oz: 100.0
+default_confidence_scale: 0.5
+fallback_position_size_oz: 1.0
