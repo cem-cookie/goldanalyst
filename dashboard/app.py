@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 import streamlit as st
+import yfinance
 from cryptography.fernet import Fernet
 from pathlib import Path
 from datetime import datetime as dt_datetime
@@ -57,6 +58,11 @@ st.session_state.setdefault("pipeline_running", False)
 # Position sizing defaults
 st.session_state.setdefault("risk_percent", 2.0)
 st.session_state.setdefault("position_size_oz", None)  # None = auto-calculate
+# Trade mode defaults
+st.session_state.setdefault("trade_mode", "Buy")  # "Buy" or "Sell"
+st.session_state.setdefault("latest_price", None)
+st.session_state.setdefault("trade_price_input", None)
+st.session_state.setdefault("trade_price_clear", False)
 
 
 # ---------- Helper Functions ----------
@@ -81,11 +87,27 @@ def _resolve_api_key(user_provided_key: str = None) -> str | None:
 def _get_user_api_key() -> str | None:
     """
     Retrieve decrypted user-provided API key from session state.
-    Returns None if no user key is stored.
+    Returns None if no valid key can be decrypted.
     """
     if st.session_state.get('api_key_enc') and st.session_state.get('fernet_key'):
         f = Fernet(st.session_state['fernet_key'].encode())
         return f.decrypt(st.session_state['api_key_enc'].encode()).decode()
+    return None
+
+
+def fetch_latest_gold_price() -> float | None:
+    """
+    Fetch the latest gold price using yfinance.
+    Returns None if the price cannot be retrieved.
+    """
+    try:
+        ticker = yf.Ticker("XAUUSD=X")
+        hist = ticker.history(period="1d", interval="1m")
+        if not hist.empty:
+            latest = hist["Close"].iloc[-1]
+            return round(float(latest), 2)
+    except Exception as e:
+        print(f"[WARN] Failed to fetch latest gold price: {e}")
     return None
 
 
@@ -506,53 +528,83 @@ with right:
                 label_visibility="collapsed",
             )
 
-        # Row: Sources
-        col1, col2, col3 = st.columns(3, gap="small")
+        # Row: Trade Price & Direction
+        col_trade1, col_trade2 = st.columns([1, 2], gap="small")
 
-        with col1:
-            st.markdown('<div class="param-label">💰 Buy Price</div>', unsafe_allow_html=True)
-            # Convert initial value to float
-            current_buy = float(st.session_state.buy_price_threshold)
-            st.session_state.buy_price_threshold = st.number_input(
-                "Buy",
-                min_value=0.1,
-                max_value=20000.0,
-                value=current_buy,  # Explicitly convert to float
-                step=0.1,
-                label_visibility="collapsed",
-                key="buy_input"
+        with col_trade1:
+            st.markdown('<div class="param-label">📊 Trade Mode</div>', unsafe_allow_html=True)
+            # Trade mode: Buy or Sell (default Buy)
+            trade_mode = st.radio(
+                "Direction",
+                ["Buy", "Sell"],
+                index=0 if st.session_state.trade_mode == "Buy" else 1,
+                key="trade_mode_radio",
+                horizontal=True,
+                label_visibility="collapsed"
             )
+            st.session_state.trade_mode = trade_mode
 
-        with col2:
-            st.markdown('<div class="param-label">💹 Sell Price</div>', unsafe_allow_html=True)
-            # Convert initial value to float
-            current_sell = float(st.session_state.sell_price_threshold)
-            st.session_state.sell_price_threshold = st.number_input(
-                "Sell",
-                min_value=0.1,
-                max_value=20000.0,
-                value=current_sell,  # Explicitly convert to float
-                step=0.1,
-                label_visibility="collapsed",
-                key="sell_input"
-            )
+        with col_trade2:
+            # Get latest price for default
+            latest_price = st.session_state.latest_price
+            if latest_price is None:
+                latest_price = fetch_latest_gold_price()
+                st.session_state.latest_price = latest_price
 
-        with col3:
-            st.markdown('<div class="param-label">🎯 Target Profit</div>', unsafe_allow_html=True)
-            # Convert initial value to float
-            current_profit = float(st.session_state.target_profit)
-            st.session_state.target_profit = st.number_input(
-                "Profit",
-                min_value=0.1,
-                max_value=100.0,
-                value=current_profit,  # Explicitly convert to float
-                step=1.0,
-                label_visibility="collapsed",
-                key="profit_input"
-            )
+            if st.session_state.trade_price_clear:
+                st.info("Price input cleared. Enter a price below or click 'Load Live Price'.")
+                default_price = 0.0
+            else:
+                default_price = latest_price if latest_price else 3950.0
 
-        # Row: Position Sizing Controls
+            if st.session_state.trade_mode == "Buy":
+                st.markdown('<div class="param-label">💰 Entry Price (Buy)</div>', unsafe_allow_html=True)
+                st.session_state.trade_price_input = st.number_input(
+                    "Entry Price",
+                    min_value=0.1,
+                    max_value=20000.0,
+                    value=default_price,
+                    step=0.1,
+                    format="%.2f",
+                    label_visibility="collapsed",
+                    key="trade_price_input",
+                    help="Entry price for Buy. Uses latest market price as default."
+                )
+            else:
+                st.markdown('<div class="param-label">💰 Entry Price (Sell)</div>', unsafe_allow_html=True)
+                st.session_state.trade_price_input = st.number_input(
+                    "Entry Price",
+                    min_value=0.1,
+                    max_value=20000.0,
+                    value=default_price,
+                    step=0.1,
+                    format="%.2f",
+                    label_visibility="collapsed",
+                    key="trade_price_input",
+                    help="Entry price for Sell. Uses latest market price as default."
+                )
+
+            # Row: Actions (Load Price, Clear)
+            col_price_btn1, col_price_btn2, col_price_btn3 = st.columns([1, 1, 1], gap="small")
+            with col_price_btn1:
+                if st.button("🔄 Live Price", key="btn_load_price", use_container_width=True,
+                          help="Load latest market price"):
+                    st.session_state.latest_price = fetch_latest_gold_price()
+                    if st.session_state.latest_price:
+                        st.session_state.trade_price_input = st.session_state.latest_price
+                        st.session_state.trade_price_clear = False
+                        st.rerun()
+            with col_price_btn2:
+                if st.button("🗑️ Clear", key="btn_clear_price", use_container_width=True,
+                          help="Clear price input"):
+                    st.session_state.trade_price_clear = True
+                    st.session_state.trade_price_input = None
+            with col_price_btn3:
+                st.caption(f"Live: ${latest_price:.2f}" if latest_price else "Live: --")
+
+        # Row: Position & Target Profit
         ps1, ps2, ps3 = st.columns(3, gap="small")
+
         with ps1:
             st.markdown('<div class="param-label">⚡ Risk %</div>', unsafe_allow_html=True)
             risk_pct = float(st.session_state.risk_percent)
@@ -568,6 +620,7 @@ with right:
                 help="Percentage of account balance to risk per trade (default: 2%)"
             )
             st.caption("Risk % per trade")
+
         with ps2:
             st.markdown('<div class="param-label">📏 Position (oz)</div>', unsafe_allow_html=True)
             pos_size = st.session_state.position_size_oz
@@ -583,6 +636,7 @@ with right:
                 help="Position size in ounces. Leave empty for auto-calculate based on risk % and confidence."
             )
             st.caption("Leave empty = auto size")
+
         with ps3:
             st.markdown('<div class="param-label">💵 Account</div>', unsafe_allow_html=True)
             if "account_balance" not in st.session_state:
@@ -632,15 +686,28 @@ with right:
                     st.write("Generating strategies...")
 
                     # Build control panel parameter dict
+                    trade_price = st.session_state.trade_price_input
+                    position_oz = st.session_state.position_size_oz
+
+                    # Calculate target profit in dollar amount: position_oz * price * profit_percent
+                    # e.g., 1 oz at $2000 with 5% target = $100 profit → $2100 target price
+                    if position_oz and trade_price:
+                        target_profit_dollars = position_oz * trade_price * (st.session_state.target_profit / 100.0)
+                        target_price = trade_price + target_profit_dollars
+                    else:
+                        target_price = trade_price  # Fallback to trade price
+
                     context = {
                         "strategy": st.session_state.strategy,
                         "investment_level": st.session_state.investment,
-                        "buy_price_threshold": st.session_state.buy_price_threshold,
-                        "sell_price_threshold": st.session_state.sell_price_threshold,
-                        "target_profit": st.session_state.target_profit,
-                        "risk_percent": st.session_state.risk_percent / 100.0,  # Convert % to decimal
-                        "position_size_oz": st.session_state.position_size_oz,
+                        "trade_mode": st.session_state.trade_mode,
+                        "trade_price": trade_price,
+                        "target_profit": target_price,  # Target price in USD (calculated)
+                        "target_profit_pct": st.session_state.target_profit,
+                        "risk_percent": st.session_state.risk_percent / 100.0,
+                        "position_size_oz": position_oz,
                         "account_balance": st.session_state.account_balance,
+                        "latest_price": st.session_state.latest_price,
                     }
 
                     # Resolve API key with fallback chain
@@ -669,6 +736,7 @@ with right:
                         st.info("Please run **News** first to collect and analyze news data.")
                     else:
                         # Calculate position size if not manually set
+                        trade_price = st.session_state.trade_price_input
                         pos_size = st.session_state.position_size_oz
                         if pos_size is None or pos_size <= 0:
                             confidence = decision.get("recommendation", {}).get("confidence", 5)
@@ -676,7 +744,7 @@ with right:
                                 account_balance=st.session_state.account_balance,
                                 confidence=confidence,
                                 user_risk_percent=st.session_state.risk_percent / 100.0,
-                                gold_price=None  # Will use fallback if not available
+                                gold_price=trade_price
                             )
 
                         # Tool function
