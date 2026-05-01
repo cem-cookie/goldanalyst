@@ -47,7 +47,7 @@ class TestTradingAgentInit:
         assert agent.name == "Agent"
         assert agent.max_alloc == 0.5
         assert agent.fee_bps == 10
-        assert agent.json_path == "data/gold_news.json"
+        assert agent.json_path == "gold_news.json"
 
     def test_init_with_custom_params(self):
         """Custom parameters should override defaults."""

@@ -195,7 +195,7 @@ class PipelineRunner:
             agent = TradingAgent(
                 name="AutoTrader",
                 api_key=api_key,
-                json_path="data/gold_news.json",
+                json_path="gold_news.json",
                 context=context,
                 model_name=model_name
             )

@@ -653,7 +653,7 @@ with right:
                     t_agent = TradingAgent(
                         name="GoldTrader",
                         api_key=api_key,
-                        json_path="data/gold_news.json",
+                        json_path="gold_news.json",
                         context=context
                     )
 

@@ -64,7 +64,7 @@ class TradingAgent:
     """Trading Agent: Manages account state and trading decisions"""
 
     def __init__(self, name="Agent", api_key=None, initial_cash=100_000.0, max_alloc=0.5,
-                 fee_bps=10, json_path="data/gold_news.json",
+                 fee_bps=10, json_path="gold_news.json",
                  persist_outputs=True, context=None, model_name="gpt-4o-mini"):
         self.model = model_name
         self.name = name
