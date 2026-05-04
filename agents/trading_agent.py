@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
@@ -252,9 +252,32 @@ Respond ONLY with valid JSON in this exact schema:
         summaries = "\n\n".join(
             [f"[{n['source']}] {n['title']}\n{n['full_text'][:800]}" for n in news_items]
         )
-
+        
+        # Get current gold price from context - CRITICAL for strategy generation
+        current_price = self._context.get("latest_price")
+        if current_price is None:
+            # Try to fetch current price if not in context
+            try:
+                import yfinance
+                ticker = yfinance.Ticker("GC=F")
+                hist = ticker.history(period="1d", interval="1m")
+                if not hist.empty:
+                    current_price = round(float(hist["Close"].iloc[-1]), 2)
+            except:
+                current_price = None
+        
+        price_info = f"CURRENT GOLD PRICE (XAU/USD): ${current_price:.2f}" if current_price else "CURRENT GOLD PRICE: Not available"
+        
         prompt = f"""
 You are a professional trading strategist specialized in gold (XAU/USD).
+
+**CRITICAL: {price_info}**
+
+All price calculations (entry_price, target_price) MUST be based on this current market price.
+- For BUY strategies: entry_price should be AT or BELOW current price (e.g., current_price - 20)
+- For SELL strategies: entry_price should be AT or ABOVE current price (e.g., current_price + 10)
+- For target_price: calculate profit/loss target relative to current price
+
 Based on the following recent news, propose 3 alternative trading strategies:
 1. Conservative (low risk)
 2. Balanced / Neutral
@@ -267,13 +290,13 @@ For each strategy, include:
 - confidence (0-5)
 - expected_risk (Low/Medium/High)
 - expected_return (Low/Medium/High)
-- entry_price (your recommended entry price in USD, e.g., 3950.0)
-- target_price (your profit target in USD, e.g., 4100.0)
+- entry_price (MUST be based on current price {current_price or 'N/A'})
+- target_price (profit target relative to current price)
 
 Also provide a high-level summary of the market (sentiment and trend)
 and recommend which strategy is optimal, with reasoning.
 
-Output ONLY valid JSON in this format:
+Output ONLY valid JSON in this format. Do NOT use emojis:
 {{
   "sentiment": "...",
   "trend": "...",
@@ -328,6 +351,12 @@ News:
         raw_output = response.choices[0].message.content.strip()
         print(f"\n[LLM RAW OUTPUT]\n{raw_output}\n")
 
+        # Handle encoding safely for non-ASCII characters
+        try:
+            raw_output.encode("utf-8")
+        except UnicodeEncodeError:
+            raw_output = raw_output.encode("latin-1", errors="ignore").decode("utf-8", errors="ignore")
+
         # Clean```json
         clean_text = re.sub(r"^```[a-zA-Z]*\n?|```$", "", raw_output.strip(), flags=re.MULTILINE)
 
@@ -346,7 +375,7 @@ News:
                 "reasoning": "Parsing failed; fallback to HOLD."
             }
 
-        analysis_data["timestamp"] = datetime.utcnow().isoformat()
+        analysis_data["timestamp"] = datetime.now(timezone.utc).isoformat()
 
         # Save Analysis File
         if self.persist_outputs:
@@ -385,7 +414,7 @@ News:
         best_id = strategies.index(best) + 1
 
         decision = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "asset": "XAU/USD",
             "market_summary": {
                 "sentiment": analysis_data.get("sentiment", "neutral"),
@@ -419,7 +448,7 @@ News:
     def run(self):
         # Default decision in case anything fails
         default_decision = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "asset": "XAU/USD",
             "market_summary": {
                 "sentiment": "neutral",

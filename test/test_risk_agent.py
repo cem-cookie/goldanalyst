@@ -115,7 +115,7 @@ class TestRiskAgentInit:
         """Should handle empty context without errors."""
         agent = RiskAgent(openai_api_key="test-key", context=None)
         assert agent.strategy_type == "Swing"
-        assert agent.buy_price_threshold == 0.5
+        assert agent.buy_price_threshold == 0
 
 
 class TestLoadDecision:

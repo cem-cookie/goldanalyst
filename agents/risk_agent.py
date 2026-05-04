@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -62,10 +62,14 @@ class RiskAgent:
         """
         Generate risk assessment guide based on user parameters.
         """
+        # Get current gold price - CRITICAL for risk assessment
+        current_price = self.context.get("latest_price", 0) if self.context else 0
+        
         context_lines = [
             "\n=== USER PREFERENCES ===",
             f"Strategy Type: {self.strategy_type}",
             f"Investment Level: {self.investment_level}",
+            f"CURRENT GOLD PRICE (XAU/USD): ${current_price:.2f}" if current_price else "CURRENT GOLD PRICE: Not available",
             f"Buy Price Threshold: {self.buy_price_threshold}%",
             f"Sell Price Threshold: {self.sell_price_threshold}%",
             f"Target Profit: {self.target_profit}%",
@@ -211,7 +215,7 @@ CRITICAL CONSTRAINTS:
 - If strategy's expected_return is "Low" and investor is "Aggressive": consider rejection
 - Position sizing should align with {self.investment_level} investor profile
 - For {self.strategy_type} strategies, emphasize strategy-specific risks
-- IMPORTANT: Respond in English only. Do not use Chinese or any other language.
+- IMPORTANT: Respond in English only. Do not use Chinese or any other language. Do NOT use emojis in output - use plain text only.
 - CRITICAL: You MUST assess ALL {len(compact)} strategies. The "items" array must contain one entry for EACH strategy (id: 1, 2, 3). Do NOT skip any strategy. The response must have {len(compact)} items in the "items" array.
 
 Return ONLY valid JSON:
@@ -248,7 +252,8 @@ Return ONLY valid JSON:
             content = response.choices[0].message.content
 
             # Extract JSON from response
-            match = re.search(r'\{[\s\S]*\}', content)
+            content_encoded = content.encode("utf-8") if isinstance(content, str) else content
+            match = re.search(r'\{[\s\S]*\}', content_encoded.decode("utf-8"))
             if match:
                 risk_json = json.loads(match.group())
                 items_count = len(risk_json.get("items", []))
@@ -384,7 +389,7 @@ Return ONLY valid JSON:
 
         return {
             "asset": asset,
-            "evaluated_at": datetime.utcnow().isoformat() + "Z",
+            "evaluated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "items": items,
             "summary": {
                 "portfolio_risk": overall,
