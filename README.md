@@ -13,7 +13,7 @@ AIGoldAnalyst is an intelligent gold trading decision system that integrates mul
 - **Risk Agent**: Evaluates trading strategy risks and provides risk control recommendations
 - **History Agent**: Analyzes historical trading records and performance metrics
 
-The system provides a web dashboard for visual analysis and interactive operations, powered by an automated pipeline.
+The system provides a [streamlit](https://streamlit.io/) web dashboard for visual analysis and interactive operations, powered by an automated pipeline.
 
 ## Project Structure
 
