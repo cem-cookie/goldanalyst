@@ -45,8 +45,6 @@ st.session_state.setdefault("strategy", "Swing")
 st.session_state.setdefault("sources", ["investing.com", "yahoo"])
 st.session_state.setdefault("active_tool", None)
 st.session_state.setdefault("investment", "Active")
-st.session_state.setdefault("buy_price_threshold", 3950.0)
-st.session_state.setdefault("sell_price_threshold", 4100.0)
 st.session_state.setdefault("target_profit", 0.1)
 st.session_state.setdefault("show_logs", True)
 # Automation state
@@ -707,7 +705,7 @@ with right:
                         st.info("Please run **News** first to collect and analyze news data.")
                     else:
                         # Calculate position size if not manually set
-                        trade_price = st.session_state.latest_price or 3950.0
+                        trade_price = st.session_state.latest_price
                         pos_size = st.session_state.position_size_oz
                         if pos_size is None or pos_size <= 0:
                             confidence = decision.get("recommendation", {}).get("confidence", 5)
@@ -789,6 +787,14 @@ with right:
                                     st.markdown(
                                         f"**Risk/Return:** {s.get('expected_risk', '—')}/{s.get('expected_return', '—')}")
 
+                                # Display entry price and target price
+                                entry_price = s.get('entry_price')
+                                target_price = s.get('target_price')
+                                if entry_price:
+                                    st.markdown(f"**Entry:** ${entry_price:,.2f}")
+                                if target_price:
+                                    st.markdown(f"**Target:** ${target_price:,.2f}")
+
                                 with st.expander("Rationale", expanded=(idx == 0)):
                                     st.write(s.get("rationale", ""))
 
@@ -811,12 +817,27 @@ with right:
 
                 with output_area:
                     # Build control panel parameter dict
+                    # Read price thresholds from trading decision (recommended strategy)
+                    decision_path = "data/trading_decision.json"
+                    if os.path.exists(decision_path):
+                        with open(decision_path, "r", encoding="utf-8") as f:
+                            decision = json.load(f)
+                        # Get recommended strategy's prices
+                        rec = decision.get("recommendation", {})
+                        rec_strategy = next((s for s in decision.get("strategies", []) if s.get("name") == rec.get("name")), {})
+                        buy_price = rec_strategy.get("entry_price") or rec_strategy.get("target_price") or 0.0
+                        sell_price = rec_strategy.get("entry_price") or rec_strategy.get("target_price") or 0.0
+                    else:
+                        buy_price = st.session_state.latest_price or 0.0
+                        sell_price = st.session_state.latest_price or 0.0
+
                     context = {
                         "strategy": st.session_state.strategy,
                         "investment_level": st.session_state.investment,
-                        "buy_price_threshold": st.session_state.buy_price_threshold,
-                        "sell_price_threshold": st.session_state.sell_price_threshold,
+                        "buy_price_threshold": buy_price,
+                        "sell_price_threshold": sell_price,
                         "target_profit": st.session_state.target_profit,
+                        "latest_price": st.session_state.latest_price,
                     }
 
                     # Initialize RiskAgent correctly

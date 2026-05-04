@@ -172,12 +172,24 @@ class PipelineRunner:
     def step_3_generate_decision(self, context: Dict = None, model_name: str = "gpt-4o-mini", api_key_enc: str | None = None) -> Dict:
         """Step 3: Generate trading decision"""
         if context is None:
+            # Fetch latest gold price for fallback
+            latest = None
+            try:
+                import yfinance
+                ticker = yfinance.Ticker("GC=F")
+                hist = ticker.history(period="1d", interval="1m")
+                if not hist.empty:
+                    latest = round(float(hist["Close"].iloc[-1]), 2)
+            except:
+                pass
+            
             context = {
                 "strategy": "Swing",
                 "investment_level": "Active",
-                "buy_price_threshold": 3950.0,
-                "sell_price_threshold": 4100.0,
-                "target_profit": 0.1
+                "buy_price_threshold": latest,
+                "sell_price_threshold": latest,
+                "target_profit": 0.1,
+                "latest_price": latest,
             }
         
         try:
@@ -222,12 +234,24 @@ class PipelineRunner:
     def step_4_risk_analysis(self, context: Dict = None) -> Dict:
         """Step 4: Run risk analysis"""
         if context is None:
+            # Fetch latest gold price for fallback
+            latest = None
+            try:
+                import yfinance
+                ticker = yfinance.Ticker("GC=F")
+                hist = ticker.history(period="1d", interval="1m")
+                if not hist.empty:
+                    latest = round(float(hist["Close"].iloc[-1]), 2)
+            except:
+                pass
+            
             context = {
                 "strategy": "Swing",
                 "investment_level": "Active",
-                "buy_price_threshold": 3950.0,
-                "sell_price_threshold": 4100.0,
-                "target_profit": 0.1
+                "buy_price_threshold": latest,
+                "sell_price_threshold": latest,
+                "target_profit": 0.1,
+                "latest_price": latest,
             }
         
         try:

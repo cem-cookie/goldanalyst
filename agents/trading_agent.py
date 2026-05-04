@@ -254,44 +254,48 @@ Respond ONLY with valid JSON in this exact schema:
         )
 
         prompt = f"""
-        You are a professional trading strategist specialized in gold (XAU/USD).
-        Based on the following recent news, propose 3 alternative trading strategies:
-        1. Conservative (low risk)
-        2. Balanced / Neutral
-        3. Aggressive (high risk, high reward)
+You are a professional trading strategist specialized in gold (XAU/USD).
+Based on the following recent news, propose 3 alternative trading strategies:
+1. Conservative (low risk)
+2. Balanced / Neutral
+3. Aggressive (high risk, high reward)
 
-        For each strategy, include:
-        - name
-        - action (BUY / SELL / HOLD)
-        - rationale
-        - confidence (0–5)
-        - expected_risk (Low/Medium/High)
-        - expected_return (Low/Medium/High)
+For each strategy, include:
+- name
+- action (BUY / SELL / HOLD)
+- rationale
+- confidence (0-5)
+- expected_risk (Low/Medium/High)
+- expected_return (Low/Medium/High)
+- entry_price (your recommended entry price in USD, e.g., 3950.0)
+- target_price (your profit target in USD, e.g., 4100.0)
 
-        Also provide a high-level summary of the market (sentiment and trend)
-        and recommend which strategy is optimal, with reasoning.
+Also provide a high-level summary of the market (sentiment and trend)
+and recommend which strategy is optimal, with reasoning.
 
-        Output ONLY valid JSON in this format:
-        {{
-          "sentiment": "...",
-          "trend": "...",
-          "strategies": [
-            {{
-              "name": "...",
-              "action": "...",
-              "rationale": "...",
-              "confidence": ...,
-              "expected_risk": "...",
-              "expected_return": "..."
-            }}
-          ],
-          "recommendation": "...",
-          "reasoning": "..."
-        }}
+Output ONLY valid JSON in this format:
+{{
+  "sentiment": "...",
+  "trend": "...",
+  "strategies": [
+    {{
+      "name": "...",
+      "action": "...",
+      "rationale": "...",
+      "confidence": ...,
+      "expected_risk": "...",
+      "expected_return": "...",
+      "entry_price": ...,
+      "target_price": ...
+    }}
+  ],
+  "recommendation": "...",
+  "reasoning": "..."
+}}
 
-        News:
-        {summaries}
-        """
+News:
+{summaries}
+"""
 
         timeout = LLM_CONFIG.get("llm_timeout_seconds", 15)
         
