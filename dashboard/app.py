@@ -59,6 +59,8 @@ st.session_state.setdefault("position_size_oz", None)  # None = auto-calculate
 # Trade mode defaults
 st.session_state.setdefault("trade_mode", "Buy")  # "Buy" or "Sell"
 st.session_state.setdefault("latest_price", None)
+st.session_state.setdefault("buy_price_threshold", None)
+st.session_state.setdefault("sell_price_threshold", None)
 
 
 # ---------- Helper Functions ----------
