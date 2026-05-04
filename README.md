@@ -1,5 +1,7 @@
 # AIGoldAnalyst
 
+> Powered and sponsored by [Goldtakas Technologies Limited](https://goldtakastechnologies.co.uk/)
+
 An AI-powered virtual gold trading system that uses Large Language Models (LLMs) for market analysis, trading decisions, and risk management.
 
 ## Project Overview
