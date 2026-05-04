@@ -60,7 +60,7 @@ goldanalyst/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/anomalyco/goldanalyst.git
+git clone https://github.com/cem-cookie/goldanalyst.git
 cd goldanalyst
 ```
 
