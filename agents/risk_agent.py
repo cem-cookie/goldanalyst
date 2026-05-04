@@ -47,9 +47,11 @@ class RiskAgent:
         self.context = context or {}
         self.strategy_type = self.context.get("strategy", "Swing")
         self.investment_level = self.context.get("investment_level", "Active")
-        self.buy_price_threshold = float(self.context.get("buy_price_threshold", 0.5))
-        self.sell_price_threshold = float(self.context.get("sell_price_threshold", 0.5))
-        self.target_profit = float(self.context.get("target_profit", 0.1))
+        buy_thresh = self.context.get("buy_price_threshold")
+        sell_thresh = self.context.get("sell_price_threshold")
+        self.buy_price_threshold = float(buy_thresh) if buy_thresh not in (None, 0) else 0
+        self.sell_price_threshold = float(sell_thresh) if sell_thresh not in (None, 0) else 0
+        self.target_profit = float(self.context.get("target_profit") or 0.1)
 
         print(f"\n[RISK AGENT INIT]")
         print(f"  Investment Level: {self.investment_level}")

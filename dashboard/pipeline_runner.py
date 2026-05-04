@@ -171,6 +171,13 @@ class PipelineRunner:
     
     def step_3_generate_decision(self, context: Dict = None, model_name: str = "gpt-4o-mini", api_key_enc: str | None = None) -> Dict:
         """Step 3: Generate trading decision"""
+        # Map UI model names to API model IDs
+        model_map = {
+            "ChatGPT (OpenAI)": "gpt-4o-mini",
+            "Claude (Anthropic)": "claude-sonnet-4-20250514",
+        }
+        api_model = model_map.get(model_name, model_name)
+        
         if context is None:
             # Fetch latest gold price for fallback
             latest = None
@@ -209,7 +216,7 @@ class PipelineRunner:
                 api_key=api_key,
                 json_path="gold_news.json",
                 context=context,
-                model_name=model_name
+                model_name=api_model
             )
             
             decision = agent.run()
