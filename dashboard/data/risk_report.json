@@ -8,18 +8,18 @@
       "approval_score": 70,
       "risk_level": "Low",
       "key_risks": [
-        "overnight gaps",
-        "market reversals",
-        "news shocks",
-        "time decay"
+        "Overnight gap risk",
+        "Market reversal risk",
+        "Geopolitical uncertainty",
+        "Liquidity risk"
       ],
       "mitigations": [
-        "monitor geopolitical news",
-        "set tight stop-loss orders",
-        "diversify portfolio",
-        "limit position size"
+        "Monitor geopolitical news closely",
+        "Set tighter stop-loss orders",
+        "Diversify holdings to reduce exposure",
+        "Regularly review market conditions"
       ],
-      "notes": "The Conservative Safe-Haven strategy aligns well with the user's balanced risk profile, providing stability with low risk exposure."
+      "notes": "The Conservative Approach aligns well with the aggressive investor's profile by minimizing risk while allowing for potential recovery. The expected low risk and return fit the strategy's focus on stability."
     },
     {
       "id": 2,
@@ -27,59 +27,58 @@
       "approval_score": 55,
       "risk_level": "Medium",
       "key_risks": [
-        "overnight gaps",
-        "market reversals",
-        "news shocks",
-        "time decay"
+        "Time decay risk",
+        "Market reversal risk",
+        "Overnight gap risk",
+        "Short-term volatility"
       ],
       "mitigations": [
-        "implement stop-loss orders",
-        "monitor market conditions closely",
-        "limit position size to 30%",
-        "diversify investments"
+        "Use trailing stop-loss orders",
+        "Stay updated on economic indicators",
+        "Limit position size to manage risk",
+        "Consider hedging strategies"
       ],
-      "notes": "The Balanced Positioning strategy presents moderate risks that require careful monitoring, making it conditionally approved for the user's profile."
+      "notes": "The Balanced Positioning strategy offers a medium risk and return profile, which is acceptable for an aggressive investor. However, the potential for short-term volatility and market reversals necessitates careful monitoring."
     },
     {
       "id": 3,
       "approval": "rejected",
-      "approval_score": 35,
+      "approval_score": 25,
       "risk_level": "High",
       "key_risks": [
-        "overnight gaps",
-        "market reversals",
-        "news shocks",
-        "time decay",
-        "high volatility"
+        "Market reversal risk",
+        "News shock risk",
+        "High volatility",
+        "Leverage risk"
       ],
       "mitigations": [
-        "avoid high leverage",
-        "set strict stop-loss limits",
-        "limit position size",
-        "stay informed on geopolitical events"
+        "Limit leverage usage",
+        "Implement strict stop-loss policies",
+        "Diversify investments",
+        "Regularly assess market conditions"
       ],
-      "notes": "The Aggressive Speculation strategy is too risky for the user's balanced profile, leading to a rejection due to high expected risk."
+      "notes": "The Aggressive Speculation strategy is too high risk for the current profile, given the potential for significant losses due to market volatility and news shocks. The high expected risk does not align with the investor's acceptable drawdown."
     }
   ],
   "summary": {
     "portfolio_risk": "Moderate",
-    "comment": "The overall portfolio risk is moderate, with one approved strategy providing stability and another conditionally approved requiring careful management."
-  },
-  "user_context": {
-    "strategy_type": "Swing",
-    "investment_level": "Active",
-    "buy_price_threshold": 3950.0,
-    "sell_price_threshold": 4100.0,
-    "target_profit": 0.1
+    "comment": "The overall portfolio risk is moderate, with one strategy approved, one conditional, and one rejected. The aggressive investor should focus on balancing risk and return while being cautious of market volatility."
   },
   "source_decision": {
     "asset": "XAU/USD",
-    "timestamp": "2026-04-26T21:27:06.497565",
+    "timestamp": "2026-05-02T00:46:08.127947",
     "market_summary": {
-      "sentiment": "Cautiously bearish due to geopolitical tensions and potential changes in US monetary policy.",
-      "trend": "Short-term downtrend with volatility, but long-term outlook remains uncertain.",
+      "sentiment": "Cautiously bearish due to mixed performance in gold stocks and geopolitical tensions affecting market stability.",
+      "trend": "Short-term downtrend with potential for recovery depending on geopolitical developments and inflationary pressures.",
       "volatility": "high",
-      "comment": "In the current environment of uncertainty and potential for further declines in gold prices, a conservative approach of holding gold is optimal to mitigate risks while still maintaining exposure to a traditionally safe asset."
+      "comment": "In light of the current mixed performance and geopolitical uncertainties, a conservative strategy minimizes risk while allowing for potential market stabilization and recovery."
     }
+  },
+  "user_context": {
+    "strategy_type": "Swing",
+    "investment_level": "Aggressive",
+    "buy_price_threshold": 3950.0,
+    "sell_price_threshold": 4100.0,
+    "target_profit": 0.1
   }
 }

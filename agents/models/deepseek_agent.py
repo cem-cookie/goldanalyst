@@ -1,6 +1,6 @@
 """
 agents/models/deepseek_agent.py
-DeepSeek 交易决策代理 - 支持数量决策
+DeepSeek Trading Agent - Supports quantity-based decisions
 """
 import os
 import re
@@ -10,14 +10,15 @@ from agents.trading_agent import TradingAgent
 
 
 class DeepSeekAgent(TradingAgent):
-    """使用 DeepSeek 进行交易决策"""
+    """Use DeepSeek for trading decisions."""
 
-    def __init__(self, name="DeepSeek", api_key=None, initial_cash=100_000.0, max_alloc=0.5, fee_bps=10):
-        super().__init__(name, api_key, initial_cash, max_alloc, fee_bps)
-        self.logs = []  # ✅ simulate_ds_comparison.py 依赖 agent.logs
+    def __init__(self, name="DeepSeek", api_key=None, initial_cash=100_000.0,
+                 max_alloc=0.5, fee_bps=10):
+        super().__init__(name, api_key, initial_cash, max_alloc, fee_bps, use_deepseek=False)
+        self.logs = []
 
     def decide(self, market_summary: str, gold_price: float) -> dict:
-        """基于市场分析决定买卖数量（oz）"""
+        """Decide buy/sell quantity (oz) based on market analysis."""
         max_buy_oz = (self.state.cash * self.max_alloc) / gold_price if gold_price > 0 else 0
         max_sell_oz = self.state.position_oz
 
@@ -63,8 +64,9 @@ Respond with JSON only:
             confidence = int(analysis.get("confidence", 2))
             reason = str(analysis.get("reason", ""))
 
-            # 验证数量（保护仓位/现金）
+            # Validate quantity (protect position/cash)
             if action == "BUY":
+                amount_oz = min(amount_oz, max_buy_oz)
                 amount_oz = min(amount_oz, max_buy_oz)
             elif action == "SELL":
                 amount_oz = min(amount_oz, max_sell_oz)
@@ -84,7 +86,7 @@ Respond with JSON only:
             return {"action": "HOLD", "amount_oz": 0, "confidence": 1, "reason": "Error"}
 
     def execute(self, decision: dict, gold_price: float, date_str: str):
-        """执行交易决策，更新账户状态，并写入 logs（simulate_ds_comparison.py 依赖）"""
+        """Execute trading decision, update state, write logs (simulate_ds_comparison.py dependency)."""
         action = (decision.get("action") or "HOLD").upper()
         amount_oz = float(decision.get("amount_oz", 0))
         executed = False

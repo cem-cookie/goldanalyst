@@ -9,7 +9,7 @@ DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
 TRADES_CSV = DATA_DIR / "trades_history.csv"
 LEDGER_JSON = DATA_DIR / "ledger.json"
-PRICE_CSV = DATA_DIR / "gold_history.csv"  # 若存在就用真实价格
+PRICE_CSV = DATA_DIR / "gold_history.csv"  # Use real price if exists
 
 RNG = np.random.default_rng(20251106)
 
@@ -20,7 +20,7 @@ def load_price_series(days=120):
         df = df.dropna(subset=["date"])
         df = df.sort_values("date").tail(days)
         return df[["date", "gold"]].rename(columns={"gold": "price"}).reset_index(drop=True)
-    # fallback: 生成一段金价
+    # Fallback: Generate synthetic gold price
     end = dt.date.today()
     start = end - dt.timedelta(days=days + 10)
     dates = pd.bdate_range(start, end)
@@ -30,11 +30,11 @@ def load_price_series(days=120):
 
 def simulate_trades(price_df, init_cash=100_000.0, fee_per_trade=2.0):
     """
-    简单规则：
-      - 随机决定是否交易（~30% 的天有交易）
-      - 买入/卖出数量：0.5 ~ 3.0 盎司
-      - 不允许做空（持仓>=0），卖出最多卖到 0
-    字段：
+    Simple rules:
+      - Random trade decision (~30% days have trades)
+      - Buy/sell quantity: 0.5 ~ 3.0 oz
+      - No short selling (position>=0), sell at most to 0
+    Fields:
       date, side, qty, price, notional, fee, realized_pnl, position_qty, avg_cost,
       cash, equity, unrealized_pnl, total_pnl
     """
@@ -47,38 +47,38 @@ def simulate_trades(price_df, init_cash=100_000.0, fee_per_trade=2.0):
     for _, r in price_df.iterrows():
         d = pd.to_datetime(r["date"]).date()
         p = float(r["price"])
-        action_flag = RNG.random() < 0.30  # 今天是否交易
+        action_flag = RNG.random() < 0.30  # Today trade decision
         side = "HOLD"
         qty = 0.0
         fee = 0.0
         trade_realized = 0.0
 
         if action_flag:
-            # 50% 买 / 50% 卖（若无仓位则强制买）
+            # 50% buy / 50% sell (force buy if no position)
             if pos <= 0.0:
                 side = "BUY"
             else:
                 side = "BUY" if RNG.random() < 0.5 else "SELL"
 
-            qty = float(np.round(RNG.uniform(0.5, 3.0), 2))  # 盎司
+            qty = float(np.round(RNG.uniform(0.5, 3.0), 2))  # ounces
             if side == "SELL":
-                qty = min(qty, pos)  # 不做空
+                qty = min(qty, pos)  # No short
                 if qty < 1e-6:
                     side = "HOLD"
 
-        # 执行
+        # Execute trade
         if side == "BUY":
             notional = qty * p
             fee = fee_per_trade
             if cash >= notional + fee:
-                # 加权平均成本
+                # Weighted average cost
                 new_pos = pos + qty
                 if new_pos > 0:
                     avg_cost = (pos * avg_cost + qty * p) / new_pos
                 pos = new_pos
                 cash -= notional + fee
             else:
-                side = "HOLD"  # 现金不够就不买
+                side = "HOLD"  # Insufficient cash
                 qty = 0.0
                 fee = 0.0
                 notional = 0.0
@@ -87,10 +87,10 @@ def simulate_trades(price_df, init_cash=100_000.0, fee_per_trade=2.0):
             notional = qty * p
             fee = fee_per_trade if qty > 0 else 0.0
             if qty > 0:
-                # 实现盈亏 = (卖价-均价)*数量 - 费用(费用计入现金流，这里单独列 fee)
+                # Realized P&L = (sell price - avg cost) * qty - fees
                 trade_realized = (p - avg_cost) * qty
                 pos -= qty
-                # 若清空仓位，均价重置
+                # If position cleared, reset avg cost
                 if pos <= 1e-9:
                     avg_cost = 0.0
                 cash += notional - fee
@@ -101,7 +101,7 @@ def simulate_trades(price_df, init_cash=100_000.0, fee_per_trade=2.0):
         else:
             notional = 0.0
 
-        # 估值
+        # Mark to market
         unrealized = (p - avg_cost) * pos if pos > 0 else 0.0
         equity = cash + pos * p
         total_pnl = realized_pnl + unrealized
@@ -126,7 +126,7 @@ def simulate_trades(price_df, init_cash=100_000.0, fee_per_trade=2.0):
     return df
 
 def summarize(df):
-    # 仅统计有实际买/卖的行
+    # Only count actual buy/sell rows
     trades = df[df["side"].isin(["BUY", "SELL"])].copy()
     n_trades = len(trades)
     sells = trades[trades["side"] == "SELL"].copy()
@@ -135,7 +135,7 @@ def summarize(df):
     net_realized = float(sells["realized_pnl"].sum())
     win_rate = float((sells["realized_pnl"] > 0).mean()) if len(sells) else 0.0
 
-    # 资金曲线
+    # Equity curve
     eq = df["equity"].astype(float).values
     peak = -np.inf
     drawdowns = []
@@ -144,7 +144,7 @@ def summarize(df):
         drawdowns.append(0 if peak == 0 else (v - peak) / peak)
     max_dd = float(np.min(drawdowns)) if drawdowns else 0.0
 
-    # 粗略日收益用于夏普
+    # Daily returns for Sharpe
     ret = pd.Series(eq).pct_change().dropna()
     sharpe = float(np.sqrt(252) * (ret.mean() / (ret.std() + 1e-9))) if len(ret) > 3 else 0.0
 
@@ -174,8 +174,8 @@ def main():
     summary = summarize(trades_df)
     LEDGER_JSON.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    print(f"✓ Mock trades written to {TRADES_CSV}")
-    print(f"✓ Ledger summary written to {LEDGER_JSON}")
+    print(f"Mock trades written to {TRADES_CSV}")
+    print(f"Ledger summary written to {LEDGER_JSON}")
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 if __name__ == "__main__":

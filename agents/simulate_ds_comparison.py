@@ -1,9 +1,9 @@
 """
 agents/simulate_ds_comparison.py
 
-对比：
-1) DeepSeek（旧版 / base）
-2) DeepSeek-LoRA（微调版，EAS）
+Comparison:
+1) DeepSeek (base)
+2) DeepSeek-LoRA (fine-tuned, EAS)
 """
 
 import os
@@ -21,9 +21,9 @@ RESULT_DIR = "results"
 PLOT_DIR = os.path.join(RESULT_DIR, "plots")
 
 
-# ✅ 你微调模型的 EAS endpoint
+# Your fine-tuned model's EAS endpoint
 EAS_URL = "http://1533366639129314.cn-beijing.pai-eas.aliyuncs.com/api/predict/quickstart_deploy_20251225_1vxd"
-EAS_TOKEN = "MjY0ZjEwNDFiODk4ZGFiOTEzYjMwZWNlNTRmNzRlY2QxZDMyMzRmMQ=="  # <- 改这里
+EAS_TOKEN = "MjY0ZjEwNDFiODk4ZGFiOTEzYjMwZWNlNTRmNzRlY2QxZDMyMzRmMQ=="  # Change this
 
 
 def ensure_dirs():
@@ -34,9 +34,9 @@ def ensure_dirs():
 def load_prices(csv_path):
     """
     Robust CSV loader:
-    - 支持有表头 / 无表头
-    - 自动找到日期列和价格列
-    - 标准化为列名: date, price
+    - Supports with/without header
+    - Auto-detect date and price columns
+    - Normalize to column names: date, price
     """
     with open(csv_path, "r", encoding="utf-8") as f:
         lines = [x.strip() for x in f.readlines() if x.strip()]
@@ -50,7 +50,7 @@ def load_prices(csv_path):
     else:
         df = pd.read_csv(csv_path, header=None, names=["date", "price"])
 
-    # ---- date 列 ----
+    # Normalize date column
     if "date" not in df.columns:
         date_col = None
         for c in df.columns:
@@ -61,7 +61,7 @@ def load_prices(csv_path):
             date_col = df.columns[0]
         df = df.rename(columns={date_col: "date"})
 
-    # ---- price 列 ----
+    # Normalize price column
     if "price" not in df.columns:
         price_col = None
         for c in df.columns:
@@ -111,7 +111,7 @@ def plot_agents(agents, price_df):
     out = os.path.join(PLOT_DIR, "deepseek_comparison.png")
     plt.savefig(out, dpi=300)
     plt.close()
-    print(f"Saved plot → {out}")
+    print(f"Saved plot -> {out}")
 
 
 def run():
@@ -128,7 +128,7 @@ def run():
     prices = prices[prices["date_str"].isin(news_days)].sort_values("date")
 
     if prices.empty:
-        print("❌ No matching days between price and news folders!")
+        print("No matching days between price and news folders!")
         return
 
     base_agent = DeepSeekAgent(
@@ -163,7 +163,7 @@ def run():
             a.execute(d, price, date)
             last = a.logs[-1]
             print(f"  {a.name:<14} {last['action']:>5} {last['amount_oz']:>6.2f} oz "
-                  f"{'✓' if last.get('executed') else '✗'} | Eq: {last['equity']:.0f}")
+                  f"{'Y' if last.get('executed') else 'N'} | Eq: {last['equity']:.0f}")
 
     for a in agents:
         ret = (a.logs[-1]["equity"] / a.logs[0]["equity"] - 1) * 100

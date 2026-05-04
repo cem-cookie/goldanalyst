@@ -20,7 +20,7 @@ class RiskAgent:
                  decision_path: str = "data/trading_decision.json",
                  out_path: str = "data/risk_report.json",
                  openai_api_key: str | None = None,
-                 api_key: str | None = None,  # ✅ 添加别名支持
+                 api_key: str | None = None,
                  context: Dict[str, Any] | None = None):
         """
         Args:
@@ -39,11 +39,11 @@ class RiskAgent:
         self.out_path = out_path
         os.makedirs(os.path.dirname(out_path) or "data", exist_ok=True)
 
-        # ✅ 支持两种参数名
+        # Support both parameter names
         actual_api_key = openai_api_key or api_key or os.getenv("OPENAI_API_KEY")
         self.client = OpenAI(api_key=actual_api_key)
 
-        # 用户选择的参数
+        # User-selected parameters
         self.context = context or {}
         self.strategy_type = self.context.get("strategy", "Swing")
         self.investment_level = self.context.get("investment_level", "Active")
@@ -58,7 +58,7 @@ class RiskAgent:
 
     def _get_context_prompt(self) -> str:
         """
-        生成基于用户参数的风险评估指南
+        Generate risk assessment guide based on user parameters.
         """
         context_lines = [
             "\n=== USER PREFERENCES ===",
@@ -69,28 +69,28 @@ class RiskAgent:
             f"Target Profit: {self.target_profit}%",
         ]
 
-        # 风险容忍度和头寸规模指南
+        # Risk tolerance and position size guide
         risk_profile = {
             "Passive": {
                 "max_drawdown": 5,
                 "position_size": "10-20%",
                 "stop_loss": "strict",
                 "leverage": "none",
-                "description": "保守交易，风险厌恶。仅在高确定性信号时交易。"
+                "description": "Conservative trading, risk-averse. Only trade on high certainty signals."
             },
             "Active": {
                 "max_drawdown": 10,
                 "position_size": "30-50%",
                 "stop_loss": "moderate",
                 "leverage": "limited",
-                "description": "平衡交易，风险/收益均衡。适度交易频率。"
+                "description": "Balanced trading, risk/return balanced. Moderate trading frequency."
             },
             "Aggressive": {
                 "max_drawdown": 20,
                 "position_size": "60-80%",
                 "stop_loss": "loose",
                 "leverage": "allowed",
-                "description": "积极交易，可承受较高风险。寻求高回报机会。"
+                "description": "Active trading, can accept higher risk. Seek high return opportunities."
             }
         }
 
@@ -101,19 +101,19 @@ class RiskAgent:
         context_lines.append(f"Stop Loss Policy: {profile['stop_loss']}")
         context_lines.append(f"Leverage: {profile['leverage']}")
 
-        # 根据策略类型的风险关键点
+        # Strategy-specific risk key points
         strategy_focus = {
             "Scalping": {
-                "key_risks": ["手续费累积", "滑点损失", "执行风险", "时间风险"],
-                "focus": "频繁交易风险：在高频交易中关注成本和执行效率"
+                "key_risks": ["Cumulative fees", "Slippage loss", "Execution risk", "Timing risk"],
+                "focus": "Frequent trading risk: focus on costs and execution efficiency"
             },
             "Swing": {
-                "key_risks": ["隔夜跳空", "时间衰减", "市场反向", "新闻冲击"],
-                "focus": "持仓风险：在2-5天持仓期间关注市场反向和突发事件"
+                "key_risks": ["Overnight gap", "Time decay", "Market reversal", "News shock"],
+                "focus": "Position risk: focus on market reversal and unexpected news during 2-5 day holds"
             },
             "Seasonal": {
-                "key_risks": ["长期波动", "利率变化", "持仓成本", "机会成本"],
-                "focus": "长期持仓风险：在数周至数月的持仓中关注宏观因素变化"
+                "key_risks": ["Long-term volatility", "Interest rate changes", "Holding costs", "Opportunity cost"],
+                "focus": "Long-term position risk: focus on macro factors during weeks-months holds"
             }
         }
 
@@ -125,16 +125,16 @@ class RiskAgent:
         return "\n".join(context_lines)
 
     def _get_approval_threshold(self) -> int:
-        """根据投资级别获取批准分数阈值"""
+        """Get approval score threshold based on investment level."""
         threshold_map = {
-            "Passive": 70,  # 被动投资者要求更高的分数
-            "Active": 60,  # 平衡投资者的标准阈值
-            "Aggressive": 50  # 激进投资者可以接受更低的分数
+            "Passive": 70,  # Passive investors require higher scores
+            "Active": 60,  # Balanced investor standard threshold
+            "Aggressive": 50  # Aggressive investors can accept lower scores
         }
         return threshold_map.get(self.investment_level, 60)
 
     def _get_max_drawdown(self) -> int:
-        """根据投资级别返回最大回撤"""
+        """Get max drawdown based on investment level."""
         drawdown_map = {
             "Passive": 5,
             "Active": 10,
@@ -143,27 +143,23 @@ class RiskAgent:
         return drawdown_map.get(self.investment_level, 10)
 
     def _get_review_frequency(self) -> str:
-        """根据策略类型返回审查频率"""
-        frequency_map = {
+        """Get review frequency based on strategy type."""
+        freq_map = {
             "Scalping": "hourly",
             "Swing": "daily",
             "Seasonal": "weekly"
         }
-        return frequency_map.get(self.strategy_type, "daily")
+        return freq_map.get(self.strategy_type, "daily")
 
-    # 1) Read Generated Actions
     def load_decision(self) -> Dict[str, Any]:
-        """加载交易决策 JSON"""
-        if not os.path.exists(self.decision_path):
-            raise FileNotFoundError(f"{self.decision_path} not found. Run Actions first.")
+        """Load trading decision JSON."""
         with open(self.decision_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    # 2) LLM Risk Evaluation
     def _llm_assess(self, asset: str, strategies: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """使用 LLM 进行风险评估，融入用户参数"""
+        """Conduct risk assessment using LLM with user parameters."""
 
-        # 仅传必要字段，避免 prompt 过长
+        # Only pass necessary fields to avoid prompt bloat
         compact = [
             {
                 "id": s.get("id"),
@@ -185,6 +181,9 @@ class RiskAgent:
 You are a strict risk officer conducting risk assessment for gold (XAU/USD) trading.
 
 {context_section}
+
+STRATEGIES TO ASSESS (you must assess ALL of these):
+{json.dumps(compact, indent=2)}
 
 Based on the user preferences above, assess risks for each strategy.
 
@@ -210,6 +209,8 @@ CRITICAL CONSTRAINTS:
 - If strategy's expected_return is "Low" and investor is "Aggressive": consider rejection
 - Position sizing should align with {self.investment_level} investor profile
 - For {self.strategy_type} strategies, emphasize strategy-specific risks
+- IMPORTANT: Respond in English only. Do not use Chinese or any other language.
+- CRITICAL: You MUST assess ALL {len(compact)} strategies. The "items" array must contain one entry for EACH strategy (id: 1, 2, 3). Do NOT skip any strategy. The response must have {len(compact)} items in the "items" array.
 
 Return ONLY valid JSON:
 {{
@@ -231,70 +232,74 @@ Return ONLY valid JSON:
     "comment": "One-paragraph portfolio-level assessment"
   }}
 }}
-
-Strategies to assess:
-{json.dumps(compact, ensure_ascii=False, indent=2)}
 """
 
-        resp = self.client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system",
-                 "content": "You are a strict financial risk officer. Output valid JSON only, no additional text."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-        )
-        raw = resp.choices[0].message.content.strip()
-        clean = re.sub(r"^```[a-zA-Z]*\n?|```$", "", raw, flags=re.MULTILINE)
-        return json.loads(clean)
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a strict risk officer. Output ONLY valid JSON without any other text."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+            )
+            content = response.choices[0].message.content
 
-    # 3) Heuristic Risk Assessment (Fallback)
+            # Extract JSON from response
+            match = re.search(r'\{[\s\S]*\}', content)
+            if match:
+                risk_json = json.loads(match.group())
+                items_count = len(risk_json.get("items", []))
+                print(f"[DEBUG] LLM returned {items_count} strategy assessments")
+                return risk_json
+            else:
+                raise ValueError("No JSON found in response")
+
+        except Exception as e:
+            print(f"[ERROR] LLM risk assessment failed: {e}")
+            raise
+
     def _heuristic_assess(self, asset: str, strategies: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        启发式风控：LLM 失败时的兜底方案
-        根据投资级别和策略类型调整风险评估
+        Heuristic risk control: fallback when LLM fails.
+        Adjust risk assessment based on investment level and strategy type.
         """
         items = []
         approval_threshold = self._get_approval_threshold()
 
         for s in strategies:
-            action = (s.get("action") or "").upper()
-            conf = int(s.get("confidence", 0))
-            expected_risk = (s.get("expected_risk") or "").lower()
-            expected_return = (s.get("expected_return") or "").lower()
+            action = s.get("action", "HOLD")
+            conf = s.get("confidence", 3)
+            exp_risk = s.get("expected_risk", "Medium")
+            exp_ret = s.get("expected_return", "Medium")
 
-            # 基础分数
+            # Base score
             base_score = 50
 
-            # 根据置信度调整
-            base_score += min(conf * 8, 30)  # 置信度最多加30分
+            # Adjust by confidence
+            base_score += min(conf * 8, 30)
 
-            # 根据投资级别调整
+            # Adjust by investment level
             if self.investment_level == "Passive":
-                # 被动投资者：高风险被惩罚，低风险被奖励
-                if expected_risk == "high":
-                    base_score -= 30
-                elif expected_risk == "low":
+                if exp_risk == "High":
+                    base_score -= 20
+                elif exp_risk == "Low":
                     base_score += 10
-                if expected_return == "high":
-                    base_score -= 10  # 高收益期望不符合被动风格
             elif self.investment_level == "Aggressive":
-                # 激进投资者：高风险被奖励，低收益被惩罚
-                if expected_risk == "high":
-                    base_score += 15
-                if expected_return == "low":
-                    base_score -= 15
+                if exp_ret == "High":
+                    base_score += 10
+                elif exp_ret == "Low":
+                    base_score -= 10
 
-            # 根据策略类型调整
+            # Adjust by strategy type
             if self.strategy_type == "Scalping":
                 if action == "SELL":
-                    base_score -= 5  # Scalping 较少短卖
+                    base_score -= 5
             elif self.strategy_type == "Seasonal":
                 if action == "HOLD":
-                    base_score += 5  # Seasonal 倾向持仓
+                    base_score += 5
 
-            # 根据动作调整风险等级
+            # Adjust risk level based on action
             if action == "HOLD":
                 risk_level = "Low" if conf >= 3 else "Medium"
                 key_risks = [
@@ -336,10 +341,10 @@ Strategies to assess:
                     "Take profit at predetermined levels"
                 ]
 
-            # 综合评分
+            # Calculate score
             score = max(0, min(100, int(base_score)))
 
-            # 确定批准状态
+            # Determine approval status
             if score >= approval_threshold:
                 approval = "approved"
             elif score < approval_threshold - 20:
@@ -356,12 +361,12 @@ Strategies to assess:
                 "mitigations": mitigations,
                 "notes": (
                     f"Heuristic assessment for {self.investment_level} investor using {self.strategy_type} strategy. "
-                    f"Action: {action}, Confidence: {conf}/5, Expected Risk: {expected_risk}, "
-                    f"Expected Return: {expected_return}."
+                    f"Action: {action}, Confidence: {conf}/5, Expected Risk: {exp_risk}, "
+                    f"Expected Return: {exp_ret}."
                 )
             })
 
-        # 投资组合整体风险
+        # Portfolio-level risk
         approved_count = sum(1 for i in items if i["approval"] == "approved")
         rejected_count = sum(1 for i in items if i["approval"] == "rejected")
         high_risk_count = sum(1 for i in items if i["risk_level"] in ["High", "Very High"])
@@ -377,24 +382,24 @@ Strategies to assess:
 
         return {
             "asset": asset,
-            "evaluated_at": datetime.utcnow().isoformat(),
+            "evaluated_at": datetime.utcnow().isoformat() + "Z",
             "items": items,
             "summary": {
                 "portfolio_risk": overall,
-                "comment": (
-                    f"Portfolio-level risk assessment for {self.investment_level} investor using {self.strategy_type} strategy. "
-                    f"{approved_count}/{len(items)} strategies approved, {rejected_count} rejected. "
-                    f"{high_risk_count} strategies flagged as high-risk. "
-                    f"Overall portfolio stance: {overall}."
-                )
+                "comment": f"Portfolio risk is {overall.lower()} based on heuristic analysis."
             }
         }
 
-    # 4) Clean Up and Save
     def build_and_save(self, risk_json: Dict[str, Any], decision: Dict[str, Any]) -> Dict[str, Any]:
         """
-        增强：添加用户上下文和源信息
+        Enhance: Add user context and source information.
         """
+        risk_json["source_decision"] = {
+            "asset": decision.get("asset"),
+            "timestamp": decision.get("timestamp"),
+            "market_summary": decision.get("market_summary"),
+        }
+
         risk_json["user_context"] = {
             "strategy_type": self.strategy_type,
             "investment_level": self.investment_level,
@@ -402,20 +407,15 @@ Strategies to assess:
             "sell_price_threshold": self.sell_price_threshold,
             "target_profit": self.target_profit,
         }
-        risk_json["source_decision"] = {
-            "asset": decision.get("asset"),
-            "timestamp": decision.get("timestamp"),
-            "market_summary": decision.get("market_summary"),
-        }
 
         with open(self.out_path, "w", encoding="utf-8") as f:
             json.dump(risk_json, f, ensure_ascii=False, indent=2)
-        print(f"[INFO] Saved risk report to {self.out_path}")
+
         return risk_json
 
-    # 5) Main flow
+    # Main flow
     def run(self) -> Dict[str, Any] | None:
-        """主流程：加载决策 → 风险评估 → 保存报告"""
+        """Main flow: Load decision -> Risk assessment -> Save report."""
         print("\n[STEP 1] Loading trading decision...")
         try:
             decision = self.load_decision()
@@ -444,7 +444,7 @@ Strategies to assess:
         print("[STEP 3] Saving structured risk report...")
         result = self.build_and_save(risk_json, decision)
 
-        # 打印摘要
+        # Print summary
         print("\n" + "=" * 60)
         print("=== RISK ASSESSMENT SUMMARY ===")
         print("=" * 60)
@@ -463,18 +463,13 @@ Strategies to assess:
         return result
 
 
+# Test case: With user parameters
 if __name__ == "__main__":
-    # 测试用例：带有用户参数
+    import sys
     context = {
-        "strategy": "Swing",
-        "investment_level": "Active",
-        "buy_price_threshold": 0.5,
-        "sell_price_threshold": 0.5,
-        "target_profit": 0.1,
+        "strategy": sys.argv[1] if len(sys.argv) > 1 else "Swing",
+        "investment_level": sys.argv[2] if len(sys.argv) > 2 else "Active",
     }
-
-    agent = RiskAgent(
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        context=context
-    )
-    agent.run()
+    agent = RiskAgent(context=context)
+    result = agent.run()
+    print(result)

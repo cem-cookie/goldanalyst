@@ -361,8 +361,23 @@ Respond ONLY with valid JSON in this exact schema:
             print("[WARN] No strategies found, fallback to HOLD.")
             return {"recommended_action": "HOLD", "confidence": 2}
 
-        # Best Strategy
-        best = max(strategies, key=lambda s: float(s.get("confidence", 0)))
+        # Best Strategy: Use LLM's explicit recommendation first, then fall back to highest confidence
+        llm_recommended_name = analysis_data.get("recommendation", "")
+        best = None
+        
+        if llm_recommended_name:
+            # Try to find the LLM's recommended strategy by name
+            for s in strategies:
+                if s.get("name", "").lower() == llm_recommended_name.lower():
+                    best = s
+                    print(f"[DEBUG] Using LLM's recommendation: {llm_recommended_name}")
+                    break
+        
+        if not best:
+            # Fallback: select strategy with highest confidence
+            best = max(strategies, key=lambda s: float(s.get("confidence", 0)))
+            print(f"[DEBUG] Using highest confidence fallback: {best.get('name')} (conf={best.get('confidence')})")
+        
         best_id = strategies.index(best) + 1
 
         decision = {

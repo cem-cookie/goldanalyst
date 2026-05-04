@@ -12,7 +12,7 @@ class GPT4oMiniBaseAgent:
         self.logs = []
 
     def decide(self, market_summary, price):
-        """调用基础 gpt-4o-mini 生成决策"""
+        """Call base gpt-4o-mini to generate decision."""
         prompt = f"""
 You are a gold trading assistant.
 Given the following market summary, output ONLY a JSON object:
@@ -63,7 +63,7 @@ Example:
 
         equity = self.cash + self.position_oz * price
 
-        # 记录日志
+        # Log
         self.logs.append({
             "date": date_str,
             "action": action,

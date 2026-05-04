@@ -1,22 +1,24 @@
 """
 agents/models/claude_haiku_agent.py
-Claude 3.5 Haiku 交易决策代理 - 支持数量决策
+Claude 3.5 Haiku Trading Agent - Supports quantity-based decisions
 """
 import os
 import re
 import json
-from anthropic import Anthropic
+from openai import OpenAI
 from agents.trading_agent import TradingAgent
 
 
 class ClaudeHaikuAgent(TradingAgent):
-    """使用 Claude 3.5 Haiku 进行交易决策"""
+    """Use Claude 3.5 Haiku for trading decisions."""
 
-    def __init__(self, name="Claude-Haiku", api_key=None, initial_cash=100_000.0, max_alloc=0.5, fee_bps=10):
-        super().__init__(name, api_key, initial_cash, max_alloc, fee_bps)
+    def __init__(self, name="Claude-Haiku", api_key=None, initial_cash=100_000.0,
+                 max_alloc=0.5, fee_bps=10):
+        super().__init__(name, api_key, initial_cash, max_alloc, fee_bps, use_deepseek=False)
+        self.logs = []
 
     def decide(self, market_summary: str, gold_price: float) -> dict:
-        """基于市场分析决定买卖数量"""
+        """Decide buy/sell quantity based on market analysis."""
 
         max_buy_oz = (self.state.cash * self.max_alloc) / gold_price if gold_price > 0 else 0
         max_sell_oz = self.state.position_oz
@@ -54,7 +56,7 @@ Respond with JSON only:
             confidence = int(analysis.get("confidence", 2))
             reason = analysis.get("reason", "")
 
-            # 验证数量
+            # Validate quantity
             if action == "BUY":
                 amount_oz = min(amount_oz, max_buy_oz)
             elif action == "SELL":

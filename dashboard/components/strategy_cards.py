@@ -2,7 +2,7 @@ import streamlit as st
 
 
 def show_strategy_cards(strategies):
-    """展示各策略的卡片式信息"""
+    """Display card-style information for each strategy."""
     cols = st.columns(len(strategies))
 
     for i, s in enumerate(strategies):
@@ -13,8 +13,8 @@ def show_strategy_cards(strategies):
             st.markdown(f"**Risk:** {s['expected_risk']}")
             st.markdown(f"**Expected Return:** {s['expected_return']}")
 
-            # 风险色条
-            risk_color = {"Low": "🟩", "Medium": "🟨", "High": "🟥"}.get(s["expected_risk"], "⬜️")
-            st.markdown(f"{risk_color} **Risk Level**")
+            # Risk color bar
+            risk_color = {"Low": "green", "Medium": "yellow", "High": "red"}.get(s["expected_risk"], "gray")
+            st.markdown(f"**Risk Level:** {risk_color}")
 
             st.progress(s["confidence"] / 5)

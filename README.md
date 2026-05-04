@@ -313,3 +313,32 @@ LLM calls are protected by timeout and retry logic:
 - **Retries**: Up to 3 attempts with exponential backoff (1s → 2s → 4s)
 
 If all retries fail, the system returns a safe fallback response (e.g., HOLD action).
+
+## 🚀 Future Features (v2)
+
+The following features are planned for future releases:
+
+### Trading Simulation & Backtesting
+- **Portfolio Simulation**: Automatically simulate trades based on recommended strategies
+- **P&L Projection**: Show potential profit/loss scenarios before executing real trades
+- **Risk Metrics**: Display max drawdown, Sharpe ratio, win rate projections
+- **What-If Analysis**: Allow users to modify parameters and see projected outcomes
+
+### Enhanced AI Models
+- **Model Comparison**: Side-by-side comparison of different LLM recommendations
+- **Custom Fine-tuning**: Support for user-trained models on historical data
+- **Ensemble Methods**: Combine multiple AI agents for more robust decisions
+
+### Advanced Features
+- **Multi-Asset Support**: Extend beyond gold to other precious metals (silver, platinum)
+- **Technical Indicators Integration**: Add MA, RSI, MACD, Bollinger Bands analysis
+- **News Sentiment Trends**: Track sentiment over time with historical charts
+- **Alert System**: Push notifications for significant market events
+
+### API Services
+- **REST API Endpoints**: Expose trading signals via HTTP API
+- **Webhook Integration**: Connect to broker APIs for automated execution
+
+---
+
+*Want to contribute or suggest features? Open an issue on GitHub!*

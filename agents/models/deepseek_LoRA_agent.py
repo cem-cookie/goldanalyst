@@ -1,12 +1,12 @@
 """
 agents/models/deepseek_LoRA_agent.py
-DeepSeek-LoRA 交易决策代理（调用阿里云 PAI EAS 已微调模型）
+DeepSeek-LoRA Trading Agent (calls Aliyun PAI EAS fine-tuned model)
 OpenAI-compatible: POST /v1/chat/completions
 
-改进版本：
-1. 初始化时自动测试连接
-2. 详细的错误诊断
-3. 自动重试逻辑
+Improvements:
+1. Auto-test connection on initialization
+2. Detailed error diagnostics
+3. Automatic retry logic
 """
 
 import os
@@ -29,7 +29,7 @@ class DeepSeekLoRAAgent(TradingAgent):
             temperature=0.3,
             max_tokens=300,
             timeout=120,
-            test_connection=True,  # 新增参数
+            test_connection=True,  # New parameter
     ):
         super().__init__(
             name=name,
@@ -49,29 +49,29 @@ class DeepSeekLoRAAgent(TradingAgent):
         self.logs = []
 
         if not self.eas_url:
-            raise ValueError("EAS_URL 未设置")
+            raise ValueError("EAS_URL not set")
         if not self.eas_token:
-            raise ValueError("EAS_TOKEN 未设置")
+            raise ValueError("EAS_TOKEN not set")
 
-        # 规范化为完整的 chat/completions 路径
+        # Normalize to full chat/completions path
         self.chat_url = self._normalize_chat_url(self.eas_url)
         print(f"[{self.name}] Initialized")
         print(f"  Chat URL: {self.chat_url}")
 
-        # 初始化时测试连接
+        # Initialize test connection on startup
         if test_connection:
             self._test_connection()
 
     @staticmethod
     def _normalize_chat_url(base: str) -> str:
-        """规范化 URL 为完整的 chat/completions 路径"""
+        """Normalize URL to full chat/completions path."""
         base = base.strip()
         if base.endswith("/v1/chat/completions"):
             return base
         return f"{base.rstrip('/')}/v1/chat/completions"
 
     def _test_connection(self):
-        """初始化时测试 EAS 连接"""
+        """Test EAS connection on initialization."""
         print(f"  Testing EAS connection...")
 
         test_payload = {
@@ -92,8 +92,8 @@ class DeepSeekLoRAAgent(TradingAgent):
 
     def _call_eas_chat_internal(self, payload, timeout=None):
         """
-        内部方法：直接调用 EAS API
-        返回原始响应对象
+        Internal method: Direct EAS API call.
+        Returns raw response object.
         """
         if timeout is None:
             timeout = self.timeout
@@ -117,7 +117,7 @@ class DeepSeekLoRAAgent(TradingAgent):
         except Exception as e:
             raise RuntimeError(f"Request error: {e}")
 
-        # 详细的错误诊断
+        # Detailed error diagnostics
         if r.status_code != 200:
             error_msg = f"HTTP {r.status_code}"
             try:
@@ -126,12 +126,12 @@ class DeepSeekLoRAAgent(TradingAgent):
             except:
                 pass
 
-            # 特殊诊断
+            # Special diagnosis
             if r.status_code == 403:
-                error_msg += "\n[Diagnosis] 403 Forbidden - 可能原因："
-                error_msg += "\n  1. IP 白名单限制（你的代码运行在不同的 IP）"
-                error_msg += "\n  2. Token 无效或过期"
-                error_msg += "\n  3. API Gateway 限制"
+                error_msg += "\n[Diagnosis] 403 Forbidden - Possible causes:"
+                error_msg += "\n  1. IP whitelist restriction (code runs on different IP)"
+                error_msg += "\n  2. Token invalid or expired"
+                error_msg += "\n  3. API Gateway limitation"
 
             raise RuntimeError(error_msg)
 
@@ -150,7 +150,7 @@ class DeepSeekLoRAAgent(TradingAgent):
 
     @staticmethod
     def _extract_json_object(text: str) -> str:
-        """从文本中提取第一个 JSON 对象"""
+        """Extract first JSON object from text."""
         text = text.strip()
         i = text.find("{")
         j = text.rfind("}")
@@ -160,16 +160,16 @@ class DeepSeekLoRAAgent(TradingAgent):
 
     def _call_eas_chat(self, messages) -> str:
         """
-        调用 EAS API，返回模型响应的文本内容
+        Call EAS API, return model response text.
 
         Args:
             messages: OpenAI-compatible messages list
 
         Returns:
-            str: 模型的响应文本
+            str: Model response text
 
         Raises:
-            RuntimeError: 如果请求或解析失败
+            RuntimeError: If request or parsing fails.
         """
         payload = {
             "model": self.model,
@@ -180,13 +180,13 @@ class DeepSeekLoRAAgent(TradingAgent):
 
         r = self._call_eas_chat_internal(payload)
 
-        # 解析 JSON 响应
+        # Parse JSON response
         try:
             data = r.json()
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Invalid JSON: {e}\nBody: {r.text[:200]}")
 
-        # 提取内容（OpenAI-compatible 格式）
+        # Extract content (OpenAI-compatible format)
         if isinstance(data, dict) and data.get("choices"):
             c0 = data["choices"][0] or {}
             msg = c0.get("message") or {}
@@ -194,7 +194,7 @@ class DeepSeekLoRAAgent(TradingAgent):
             if isinstance(content, str):
                 return content
 
-        # 备选字段
+        # Alternative fields
         if isinstance(data, dict):
             for k in ["text", "output", "response", "result"]:
                 if isinstance(data.get(k), str):
@@ -206,7 +206,7 @@ class DeepSeekLoRAAgent(TradingAgent):
 
     def decide(self, market_summary: str, gold_price: float) -> dict:
         """
-        根据市场分析做出交易决策
+        Make trading decision based on market analysis.
         """
         max_buy_oz = (self.state.cash * self.max_alloc) / gold_price if gold_price > 0 else 0.0
         max_sell_oz = self.state.position_oz
@@ -229,13 +229,13 @@ Respond with JSON only:
         try:
             raw = self._call_eas_chat(messages=[{"role": "user", "content": prompt}])
 
-            # 清理响应
+            # Clean response
             clean = raw.strip()
             clean = self._strip_think(clean)
             clean = self._strip_code_fence(clean)
             clean = self._extract_json_object(clean)
 
-            # 解析 JSON
+            # Parse JSON
             obj = json.loads(clean)
 
             action = str(obj.get("action", "HOLD")).upper()
@@ -243,7 +243,7 @@ Respond with JSON only:
             confidence = int(obj.get("confidence", 2))
             reason = str(obj.get("reason", ""))
 
-            # 验证金额
+            # Validate amount
             if action == "BUY":
                 amount = min(amount, max_buy_oz)
             elif action == "SELL":
@@ -269,7 +269,7 @@ Respond with JSON only:
             }
 
     def execute(self, decision: dict, gold_price: float, date_str: str):
-        """执行交易决策"""
+        """Execute trading decision."""
         action = (decision.get("action") or "HOLD").upper()
         amount_oz = float(decision.get("amount_oz", 0))
         executed = False

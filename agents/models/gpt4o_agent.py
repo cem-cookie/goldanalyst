@@ -1,6 +1,6 @@
 """
 agents/models/gpt4o_agent.py
-GPT-4o 交易决策代理 - 支持数量决策
+GPT-4o Trading Agent - Supports quantity-based decisions
 """
 import os
 import re
@@ -10,15 +10,15 @@ from agents.trading_agent import TradingAgent
 
 
 class GPT4oAgent(TradingAgent):
-    """使用 GPT-4o 进行交易决策"""
+    """Use GPT-4o for trading decisions."""
 
     def __init__(self, name="GPT-4o", api_key=None, initial_cash=100_000.0,
                  max_alloc=0.5, fee_bps=10):
         super().__init__(name, api_key, initial_cash, max_alloc, fee_bps, use_deepseek=False)
-        self.logs = []  # 添加这行
+        self.logs = []
 
     def decide(self, market_summary: str, gold_price: float) -> dict:
-        """基于市场分析决定买卖数量"""
+        """Decide buy/sell quantity based on market analysis."""
 
         max_buy_oz = (self.state.cash * self.max_alloc) / gold_price if gold_price > 0 else 0
         max_sell_oz = self.state.position_oz
@@ -58,11 +58,11 @@ class GPT4oAgent(TradingAgent):
             raw = rsp.choices[0].message.content.strip()
             print(f"[DEBUG {self.name}] Raw: {raw[:150]}")
 
-            # 清理 markdown
+            # Clean markdown
             clean = re.sub(r"^```[a-z]*\n?|```$", "", raw, flags=re.MULTILINE).strip()
             print(f"[DEBUG {self.name}] Clean: {clean[:150]}")
 
-            # 尝试解析 JSON
+            # Try to parse JSON
             try:
                 analysis = json.loads(clean)
             except json.JSONDecodeError as e:
@@ -75,7 +75,7 @@ class GPT4oAgent(TradingAgent):
             confidence = int(analysis.get("confidence", 2))
             reason = analysis.get("reason", "")
 
-            # 验证数量
+            # Validate quantity
             if action == "BUY":
                 amount_oz = min(amount_oz, max_buy_oz)
             elif action == "SELL":
@@ -99,13 +99,13 @@ class GPT4oAgent(TradingAgent):
             return {"action": "HOLD", "amount_oz": 0, "confidence": 1, "reason": f"Error: {str(e)}"}
 
     def execute(self, decision: dict, gold_price: float, date_str: str):
-        """执行交易决策，更新账户状态"""
+        """Execute trading decision, update account state."""
         action = decision.get("action", "HOLD")
         amount_oz = float(decision.get("amount_oz", 0))
         confidence = decision.get("confidence", 0)
         reason = decision.get("reason", "")
 
-        executed = False  # 标记是否成功执行
+        executed = False  # Flag for successful execution
 
         if action == "BUY":
             cost = amount_oz * gold_price
@@ -117,9 +117,9 @@ class GPT4oAgent(TradingAgent):
                 self.state.position_oz += amount_oz
                 executed = True
                 print(f"[{date_str}] {self.name} BUY {amount_oz:.2f}oz @ ${gold_price:.2f}")
-                print(f"  → Cash: ${self.state.cash:,.2f}, Position: {self.state.position_oz:.2f}oz")
+                print(f"  -> Cash: ${self.state.cash:,.2f}, Position: {self.state.position_oz:.2f}oz")
             else:
-                print(f"[{date_str}] {self.name} BUY REJECTED: 现金不足")
+                print(f"[{date_str}] {self.name} BUY REJECTED: Insufficient cash")
 
         elif action == "SELL":
             if amount_oz <= self.state.position_oz:
@@ -130,33 +130,33 @@ class GPT4oAgent(TradingAgent):
                 self.state.position_oz -= amount_oz
                 executed = True
                 print(f"[{date_str}] {self.name} SELL {amount_oz:.2f}oz @ ${gold_price:.2f}")
-                print(f"  → Cash: ${self.state.cash:,.2f}, Position: {self.state.position_oz:.2f}oz")
+                print(f"  -> Cash: ${self.state.cash:,.2f}, Position: {self.state.position_oz:.2f}oz")
             else:
-                print(f"[{date_str}] {self.name} SELL REJECTED: 持仓不足")
+                print(f"[{date_str}] {self.name} SELL REJECTED: Insufficient position")
 
         elif action == "HOLD":
             executed = True
             print(f"[{date_str}] {self.name} HOLD")
 
-        # 计算权益
+        # Calculate equity
         equity = self.state.cash + self.state.position_oz * gold_price
 
-        # 记录到日志 ✅ 确保包含 executed 字段
+        # Log with executed flag
         self.logs.append({
             "date": date_str,
             "action": action,
             "amount_oz": amount_oz,
-            "executed": executed,  # ← 这个很重要
+            "executed": executed,
             "price": gold_price,
             "equity": equity,
             "position_oz": self.state.position_oz,
             "cash": self.state.cash
         })
     def get_portfolio_value(self, gold_price: float) -> float:
-        """计算投资组合总价值 = 现金 + 持仓 × 当前价格"""
+        """Calculate total portfolio value = cash + position * current price."""
         return self.state.cash + self.state.position_oz * gold_price
 
     def get_return(self, gold_price: float) -> float:
-        """计算收益率"""
+        """Calculate return percentage."""
         portfolio_value = self.get_portfolio_value(gold_price)
         return (portfolio_value - self.state.initial_cash) / self.state.initial_cash * 100

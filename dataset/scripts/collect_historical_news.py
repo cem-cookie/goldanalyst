@@ -55,7 +55,7 @@ def collect_historical_news(days=30, openai_api_key=None, limit_per_source=10):
                     news_list, json_path = agent.collect_past_news_with_gnews(
                         date_str=date_str,
                         query="gold",
-                        limit=3 * limit_per_source  # 一共约30条
+                        limit=3 * limit_per_source  # About 30 total
                     )
 
                 else:

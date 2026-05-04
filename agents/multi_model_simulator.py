@@ -31,18 +31,18 @@ import numpy as np
 
 
 def plot_comparison(agents, price_df):
-    """绘制三个 agent 的净值对比 + 金价"""
+    """Compare three agent equity curves + gold price."""
 
     fig, ax1 = plt.subplots(figsize=(14, 7))
 
-    # 金价在右轴
+    # Gold price on right axis
     ax2 = ax1.twinx()
     ax2.plot(price_df['date'].sort_values(), price_df.sort_values('date')['gold'],
              linewidth=3, label='Gold Price', color='#FFD700', marker='o', markersize=6)
     ax2.set_ylabel('Gold Price (USD/oz)', fontsize=12, fontweight='bold', color='#FFD700')
     ax2.tick_params(axis='y', labelcolor='#FFD700')
 
-    # 三个 agent 的净值在左轴
+    # Three agent equities on left axis
     colors = ['#2ecc71', '#e74c3c', '#3498db']
     for agent, color in zip(agents, colors):
         log_df = pd.DataFrame(agent.logs)
@@ -57,7 +57,7 @@ def plot_comparison(agents, price_df):
     ax1.grid(True, alpha=0.3)
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
 
-    # 合并图例
+    # Merge legends
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=11, framealpha=0.95)
@@ -66,12 +66,12 @@ def plot_comparison(agents, price_df):
     plt.tight_layout()
     out_path = os.path.join(PLOT_DIR, "agent_comparison.png")
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
-    print(f"✅ Saved comparison: {out_path}")
+    print(f"Saved comparison: {out_path}")
     plt.close()
 
 
 def load_gold_prices_robust(path: str):
-    """完全不用 pandas，返回简单的字典"""
+    """Load without pandas, return simple dict."""
 
     prices_data = {
         '2025-10-08': 4043.300048828125,
@@ -98,17 +98,18 @@ def load_gold_prices_robust(path: str):
         '2025-11-05': 3992.10009765625,
     }
 
-    print(f"✅ Loaded {len(prices_data)} records")
+    print(f"Loaded {len(prices_data)} records")
     return prices_data
 
+
 def ensure_dirs():
-    """创建必要的目录"""
+    """Create required directories."""
     os.makedirs(RESULT_DIR, exist_ok=True)
     os.makedirs(PLOT_DIR, exist_ok=True)
 
 
 def plot_agent_trades(agent, price_df):
-    """为单个代理生成价格和交易图表"""
+    """Generate price and trade chart for single agent."""
     log_df = pd.DataFrame(agent.logs)
     if log_df.empty:
         print(f"[PLOT] {agent.name}: no logs to plot.")
@@ -129,14 +130,14 @@ def plot_agent_trades(agent, price_df):
 
     fig, ax1 = plt.subplots(figsize=(14, 6))
 
-    # 上轴：价格
+    # Top axis: price
     ax1.plot(merged["date"], merged["price_close"], linewidth=2.5, label="Gold Close", color="#2c3e50")
     ax1.fill_between(merged["date"], merged["price_close"].min(), merged["price_close"], alpha=0.1, color="#2c3e50")
 
     if not buys.empty:
         ax1.scatter(buys["date"], buys["price_close"], marker="^", s=200, label="BUY",
                     color="#2ecc71", zorder=5, edgecolors="darkgreen", linewidth=1.5)
-        # 标注买量
+        # Label buy quantity
         for _, row in buys.iterrows():
             ax1.annotate(f"{row['amount_oz']:.1f}oz",
                          xy=(row['date'], row['price_close']),
@@ -146,7 +147,7 @@ def plot_agent_trades(agent, price_df):
     if not sells.empty:
         ax1.scatter(sells["date"], sells["price_close"], marker="v", s=200, label="SELL",
                     color="#e74c3c", zorder=5, edgecolors="darkred", linewidth=1.5)
-        # 标注卖量
+        # Label sell quantity
         for _, row in sells.iterrows():
             ax1.annotate(f"{row['amount_oz']:.1f}oz",
                          xy=(row['date'], row['price_close']),
@@ -160,7 +161,7 @@ def plot_agent_trades(agent, price_df):
     ax1.grid(True, alpha=0.3)
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
 
-    # 右轴：净值
+    # Right axis: equity
     ax2 = ax1.twinx()
     ax2.plot(merged["date"], merged["equity"], linestyle="--", linewidth=2, label="Equity", color="#27ae60")
     ax2.set_ylabel("Portfolio Equity (USD)", fontsize=11, color="#27ae60")
@@ -173,7 +174,7 @@ def plot_agent_trades(agent, price_df):
     plt.tight_layout()
     plt.savefig(out_path, dpi=200, bbox_inches='tight')
     plt.close()
-    print(f"✅ Saved: {out_path}")
+    print(f"Saved: {out_path}")
 
 
 def run():
@@ -183,11 +184,11 @@ def run():
     print(" GOLD TRADING BACKTESTER - Multi-Model Comparison")
     print("=" * 80)
 
-    # 加载金价
+    # Load gold price
     print("\n[STEP 1] Loading gold price history...")
     all_prices_dict = load_gold_prices_robust(PRICE_CSV)
 
-    # 转成 DataFrame（这次分开做）
+    # Convert to DataFrame (separate this time)
     print("[DEBUG] Converting to DataFrame...")
     rows = []
     for date_str, price in all_prices_dict.items():
@@ -198,9 +199,9 @@ def run():
         })
 
     price_df = pd.DataFrame(rows)
-    print(f"✅ DataFrame created: {len(price_df)} records")
+    print(f"DataFrame created: {len(price_df)} records")
 
-    # 获取 news 目录中的日期
+    # Get dates from news directory
     print("\n[STEP 2] Finding analysis dates in data/news/...")
     have_days = sorted(
         os.path.basename(p.rstrip("/"))
@@ -209,33 +210,33 @@ def run():
     )
 
     if not have_days:
-        print("❌ No analysis directories found in data/news/")
+        print("No analysis directories found in data/news/")
         return
 
-    print(f"✅ Found {len(have_days)} analysis dates")
+    print(f"Found {len(have_days)} analysis dates")
 
-    # 只取对应日期的价格
+    # Only keep prices for matching dates
     print("\n[STEP 3] Matching prices with analysis dates...")
     price_df = price_df[price_df["date_str"].isin(have_days)].copy().sort_values("date")
 
     if price_df.empty:
-        print("❌ No matching dates")
+        print("No matching dates")
         return
 
-    print(f"✅ Matched {len(price_df)} days")
+    print(f"Matched {len(price_df)} days")
 
-    # 初始化代理
+    # Initialize agents
     print("\n[STEP 4] Initializing agents...")
     agents = [
         GPT4oAgent("GPT-4o", api_key=os.getenv("OPENAI_API_KEY"), initial_cash=100_000, max_alloc=0.5, fee_bps=10),
         ClaudeHaikuAgent("Claude-Haiku", api_key=os.getenv("ANTHROPIC_API_KEY"), initial_cash=100_000, max_alloc=0.5,
                          fee_bps=10),
         DeepSeekAgent("DeepSeek", api_key=os.getenv("DEEPSEEK_API_KEY"), initial_cash=100_000, max_alloc=0.5,
-                      fee_bps=10),
+                       fee_bps=10),
     ]
-    print(f"✅ Initialized {len(agents)} agents")
+    print(f"Initialized {len(agents)} agents")
 
-    # 回测
+    # Backtest
     print("\n[STEP 5] Running backtest...")
     print("=" * 80)
 
@@ -254,22 +255,22 @@ def run():
 
         for agent in agents:
             decision = agent.decide(market_summary, price)
-            agent.execute(decision, price, d)  # ← 不要接收返回值
+            agent.execute(decision, price, d)
 
-            # 从 agent.logs 获取最新记录
+            # Get latest record from agent.logs
             last_log = agent.logs[-1]
 
             action = last_log["action"]
             amount = last_log["amount_oz"]
             executed = last_log["executed"]
             eq = last_log["equity"]
-            status = "✓" if executed else "✗"
+            status = "Y" if executed else "N"
 
             print(f"  {agent.name:<15} {action:5s} {amount:6.2f}oz {status} | Eq: ${eq:>10,.0f}")
 
     print("=" * 80)
 
-    # 汇总
+    # Summary
     print("\n[STEP 6] Performance Summary")
     print("=" * 80)
 
@@ -283,17 +284,16 @@ def run():
         print(f"\n{agent.name}")
         print(f"  Return: {ret_pct:7.2f}% | Max DD: {dd * 100:7.2f}% | Trades: {trades:2d} | Final: ${final_eq:,.0f}")
 
-    # 绘图
-        # 绘图
-        print("\n[STEP 7] Generating plots...")
-        for agent in agents:
-            plot_agent_trades(agent, price_df)
+    # Plotting
+    print("\n[STEP 7] Generating plots...")
+    for agent in agents:
+        plot_agent_trades(agent, price_df)
 
-        # 绘制三个 agent 对比图
-        print("\n[STEP 8] Plotting agent comparison...")
-        plot_comparison(agents, price_df)
+    # Plot agent comparison
+    print("\n[STEP 8] Plotting agent comparison...")
+    plot_comparison(agents, price_df)
 
-        print("\n✅ Complete!")
+    print("\nComplete!")
 
 
 if __name__ == "__main__":

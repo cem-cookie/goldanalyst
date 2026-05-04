@@ -2,18 +2,18 @@
 """
 Dataset Generator v4 INTEGRATED - Final Version
 
-完整流程：
-新闻(NEWS) + 历史数据(HISTORY) + MA30/50/200 + Profit/Target
-  → 综合到LLM → 最终交易建议
+Full pipeline:
+News(NEWS) + History(HISTORY) + MA30/50/200 + Profit/Target
+  -> Combine to LLM -> Final trading recommendation
 
 Features:
-✅ Load news from data/news/{date}/news.json
-✅ Analyze market strategies from news using analyze_market_strategies()
-✅ Calculate MA-30, MA-50, MA-200 from full history
-✅ Find local peaks (relative + 3-year absolute)
-✅ Simulate realistic profit targets based on peaks
-✅ Combine ALL factors into single comprehensive prompt
-✅ LLM synthesizes everything for final recommendation
+- Load news from data/news/{date}/news.json
+- Analyze market strategies from news using analyze_market_strategies()
+- Calculate MA-30, MA-50, MA-200 from full history
+- Find local peaks (relative + 3-year absolute)
+- Simulate realistic profit targets based on peaks
+- Combine ALL factors into single comprehensive prompt
+- LLM synthesizes everything for final recommendation
 """
 
 import os
