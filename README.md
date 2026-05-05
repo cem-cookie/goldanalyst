@@ -4,6 +4,8 @@
 
 An AI-powered virtual gold trading system that uses Large Language Models (LLMs) for market analysis, trading decisions, and risk management.
 
+➡️ [jump to app from here](https://goldanalyst.streamlit.app/)
+
 ## Project Overview
 
 AIGoldAnalyst is an intelligent gold trading decision system that integrates multiple AI agents:
